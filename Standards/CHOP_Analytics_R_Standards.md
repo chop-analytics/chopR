@@ -36,7 +36,7 @@ In order for R projects to work, you will need to organize your R scripts/Rmd’
 
 To set up an R project, save your R project at the top level of your directory. When R projects are saved at the top level of your directory, R scripts are told to look for those files within that directory. This is how the set-up would work to save your R project at the top level of the directory:
 
-![](Source%20.rmd%20files/media/r_project_setup_1.png?raw=true)
+![](Source%20.rmd%20files/media/r_project_setup_1.png)
 
 As you can see, there is now an R project file saved within the directory (last file listed above). If you wanted to read in a csv from patient\_lists, your read.csv statement in your script would look like this:
 
