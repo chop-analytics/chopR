@@ -8,6 +8,8 @@ output:
     toc: true
 ---
 
+####**CHOP Data Analytics R Standards**
+
 With R becoming a widely used tool within the team, there is a need to standardize the R coding process to allow for effective and efficient code review, project handoff, and project sustainment. CHOP will be adopting the following standards related to querying philosophy, organization, code structure, and code style for projects using R scripts and R markdowns.
 
 ####**CHOP R Standards: Querying Philosophy**
