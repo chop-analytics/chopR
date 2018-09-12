@@ -87,7 +87,7 @@ The first chunk in your code should only include code that sets up the rest of y
 
 Below is an example of what this first chunk may look like:
 
-![](Source%20.rmd%20files/media/code_ord_1.png)
+![](Source%20.rmd%20files/media/code_org_1.png)
 
 *Code Chunk \#2:* The second code chunk is where you will be bringing your data into your R environment. This can be performed via a SQL statement, read.csv statement, etc.
 
