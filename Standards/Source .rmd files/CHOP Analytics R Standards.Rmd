@@ -1,8 +1,11 @@
 ---
 title: "CHOP Data Analytics R Standards"
-author: "Trailblazers Club, Office of Clinical Quality Improvement" 
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+last author: "Trailblazers Club, Office of Clinical Quality Improvement" 
+last update date: August 2nd, 2018
+output:
+  md_document:
+    variant: markdown_github
+    toc: true
 ---
 
 With R becoming a widely used tool within the team, there is a need to standardize the R coding process to allow for effective and efficient code review, project handoff, and project sustainment. CHOP will be adopting the following standards related to querying philosophy, organization, code structure, and code style for projects using R scripts and R markdowns.
