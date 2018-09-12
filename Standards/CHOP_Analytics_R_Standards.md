@@ -1,8 +1,11 @@
+-   [**CHOP Data Analytics R Standards**](#chop-data-analytics-r-standards)
 -   [**CHOP R Standards: Querying Philosophy**](#chop-r-standards-querying-philosophy)
 -   [**CHOP R Standards: Organization with R Projects**](#chop-r-standards-organization-with-r-projects)
 -   [**CHOP R Standards: Code Structure**](#chop-r-standards-code-structure)
 -   [**CHOP R Standards: Code Style**](#chop-r-standards-code-style)
 -   [**CHOP R Standards: Publishing with R Studio Connect**](#chop-r-standards-publishing-with-r-studio-connect)
+
+#### **CHOP Data Analytics R Standards**
 
 With R becoming a widely used tool within the team, there is a need to standardize the R coding process to allow for effective and efficient code review, project handoff, and project sustainment. CHOP will be adopting the following standards related to querying philosophy, organization, code structure, and code style for projects using R scripts and R markdowns.
 
