@@ -1,0 +1,1299 @@
+---
+# App title - will appear in the header section
+title: "CCU Discharge QI Metrics" 
+runtime: shiny 
+output: 
+ flexdashboard::flex_dashboard: 
+    navbar:
+    # flexdashboard layouts can be in columns (if you want graphs side-by-side - then their
+    # "containers" are columns) or rows (if you want graphs stacked, then their "containers" 
+    # are rows); here we've defined the default orientation to be rows, but you can change your pages
+    # individually to use columns if you want a mix of the two (see below for more)
+    orientation: rows 
+    # Do  we want the charts to fill the page vertically - thus they resize when the window does?
+    # If yes (usual case), put "fill" here. If not, put "scroll" here - this will keep the charts'
+    # original height and add a scrollbar as necessary (you may want this if you have
+    # 2+ charts stacked in rows). 
+    vertical_layout: fill 
+    # This allows a user to see the source code that generated the app, by clicking on "Source Code"
+    # in the upper right hand corner. This is most useful for other data analysts who visit your
+    # app and want to understand how it's built.
+    source_code: embed
+    # Adds a logo for your app (defaulted in upper left-hand side); this one in particular is looking
+    # for the image "chop-icon-header.png" in the "flexdashboard-theme" Github Repository.
+    logo: https://github.research.chop.edu/pages/CQI/flexdashboard-theme/images/logo/chop-icon-header.png
+    # This is sets the CHOP logo as the little picture that appears on your browser tab 
+    favicon: https://www.chop.edu/sites/all/themes/chop/favicon.ico
+    # CSS stands for Cascading Style Sheets. It describes how HTML elements are to be displayed in
+    # the web browser. This points to the location of the CSS files that define the style of our apps.
+    css: 
+        - https://github.research.chop.edu/pages/CQI/chop-bootstrap/bootstrap-3/bootstrap.min.css
+        - https://github.research.chop.edu/pages/CQI/flexdashboard-theme/css/flexdashboard.min.css
+---
+
+```{r about-and-yaml, eval=FALSE}
+# About this guide: 
+# This guide serves as a working example of the types of functions, layouts, etc. you could do in a
+# flexdashboard. It assumes you already know how to use R to report on your data, including setting up
+# your R environment, wrangling data using dplyr, and creating basic visualizations. The intent is for
+# you to be able to run this guide locally and pair what you see in the code with the front-end
+# visualization. This app is also published on RStudio Connect if you want to view the front-end on the
+# web: https://rstudio-connect.chop.edu/content/80/. You can also hit the play button that 
+# says "Run Document" at the top of this .Rmd file to run this file locally.
+
+# This is not meant to be exhaustive, rather to get you started on making a simple dashboard to 
+# fit the needs of a project. There are many cool functionalities you could do that are not covered
+# here, but have been explored by another analysts, so please reach out on Slack if you want to do
+# something but do not know how. For more information on layouts available, 
+# go here: https://rmarkdown.rstudio.com/flexdashboard/layouts.html#overview
+
+# Let's get started:
+# What is that stuff up there?
+# That is the YAML (if you're curious: Yet Another Markup Language). It is where you define 
+# settings for the entire app. See the comments next to each thing to understand what they do.
+```
+
+```{r packages, include=FALSE}
+# This is where you load your packages (your packages may differ depending on what you used to process
+# your data or make your charts). While it may be tempting to copy-and-paste this package chunk from
+# your other dashboards, you should only include those libraries that you actually use in your
+# dashboard - this will help minimize the run-time. Do not include any libPath manipulation when
+# publishing.
+
+library(flexdashboard)
+library(DT)
+library(highcharter)
+library(lubridate)
+library(dplyr)
+library(rocqi)
+library(odbc)
+# Prevent all code chunks from printing code, warnings, or messages
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r get-data}
+# The rocqi package makes it really easy to connect to the CDW. Use cdwuat() to connect to UAT. 
+con <- cdwprd()
+# This step is where you save your SQL query as a string. NOTE: It is strongly recommended to use 
+# FACT tables when you publish. Shiny apps re-load every time a user opens your app. If you 
+# are running long, complicated SQL, your user will probably sit there waiting to see his/her data
+# for longer than is comfortable.
+full_sql <- "select * from ocqi_prd..fact_ccu_discharge"
+kaps_sql <- "select * from ocqi_prd..fact_ccu_dc_kaps"
+# Here is where we tell R to go into the CDW connection, pull in the SQL query that we defined above, 
+# and save the data frame.
+data_raw <- dbGetQuery(con, full_sql) 
+kaps_detail <- dbGetQuery(con, kaps_sql) 
+# Make sure you disconnect your connection.
+dbDisconnect(con)
+# In general the rocqi::hc_ocqi_opts() function (see below) should handle exporting graphs for you.
+# But if you wish to override the defaults, you'll need to create this "export" object to add to the
+# hc_exporting() function. If for some reason you'd like to limit the types of exports that your
+# viewers can perform, simply delete that section from below. Be aware that any filters or date ranges 
+# selected will be applied to the exported image/csv/xls. Remove all filters and selected zoom type 
+# 'All' if you'd like to export all of your data.
+export <-
+  list(
+    list(
+      text = "PNG image",
+      onclick = JS(
+        "function () {this.exportChart({ type: 'image/png' }); }")),
+    list(
+      text = "JPEG image",
+      onclick = JS(
+        "function () {this.exportChart({ type: 'image/jpeg' }); }")),
+    list(
+      text = "SVG vector image",
+      onclick = JS(
+        "function () {this.exportChart({ type: 'image/svg+xml' }); }")),
+    list(
+      text = "PDF document",
+      onclick = JS(
+        "function () {this.exportChart({ type: 'application/pdf' }); }")),
+    list(separator = TRUE),
+    list(
+      text = "CSV document",
+      onclick = JS(
+        "function () { this.downloadCSV(); }")),
+    list(
+      text = "XLS document",
+      onclick = JS(
+        "function () { this.downloadXLS(); }"))
+  )
+```
+
+```{r page-head-and-sidebar, eval=FALSE}
+# The text with many ==== below it is where you are defining things that will go on the first
+# "page" of your app. Everything below the ==== will appear on your first page until you define
+# a new page.
+
+# Sidebar {.sidebar} creates the sidebar panel on the left-hand side of the page. Here is where you can
+# put long form text (such as metric definitions) and filters. You can use Rmarkdown-style headers
+# (using ##) to define what size header you'd like to use (more #'s = smaller font). You can use the 
+# <br> HTML tag if you want to create some vertical space between blocks of text.
+```
+
+1x1 Grid, Chart
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+[//]: # (Comment - You can put the title of your graph here (see below), and it will appear it big
+beautiful blue letters. However, since it's not a part of the graph, if users try to export the graph,
+they won't get this title. If that's their preference, then you can leave this blank, and use
+hc_title() to place the title directly in the graph. Also, this is how you comment directly in an
+Rmarkdown file!)
+
+#### Press Ganey Discharge
+
+Press Ganey survey data provides some information on the perceptions of patients and families regarding
+the discharge process. Responses range from 1 (very poor) to 5 (very good).
+
+<br>
+
+**The discharge-related questions are:**
+
+* Degree to which you felt ready to have your child discharged 
+* Instructions given about how to care for your child at home
+* Speed of the discharge process after you were told your child could go home
+
+Row
+-----------------------------------------------------------------------
+
+### Responses to Press Ganey Discharge Questions
+
+```{r pg-chart}
+# This section is just filtering the data and creating variables so I can use it for display purposes.
+pg_raw_one <-
+  data_raw %>%
+  filter((!is.na(PG_READY_RESPONSE) |
+            !is.na(PG_SPEED_RESPONSE) |
+            !is.na(PG_INSTRUCT_RESPONSE))) %>% 
+  mutate(month_of = as.Date(floor_date(HOSP_DISCHRG_DT, unit = "month")),
+         PG_READY_RESPONSE = as.integer(PG_READY_RESPONSE), 
+         PG_SPEED_RESPONSE = as.integer(PG_SPEED_RESPONSE),
+         PG_INSTRUCT_RESPONSE = as.integer(PG_INSTRUCT_RESPONSE))
+
+pg_month_one <- 
+  pg_raw_one %>%
+  group_by(month_of) %>%
+  summarise(total = length(unique(VISIT_KEY)),
+            ready = round(sum(PG_READY_RESPONSE)/length(unique(VISIT_KEY)), digits = 1),
+            speed = round(sum(PG_SPEED_RESPONSE)/length(unique(VISIT_KEY)), digits = 1),
+            instruct = round(sum(PG_INSTRUCT_RESPONSE)/length(unique(VISIT_KEY)), digits = 1)) 
+
+# For more information about how to make charts using highcharter, go to this link:
+# https://rstudio-connect.chop.edu/chopr/guides/highcharter/
+
+# The UI team has decided to use the 'stock' type for it's useful defaults. This will be the standard 
+# OCQI highchart type. Do not change this unless you have a reason to and have discussed with your UI
+# reviewer. Below, we detail every component of a standard highchart. This should serve as a base for
+# your highcharter knowledge. However, continue reading this guide to see how we have made creating
+# highcharts more efficient with rocqi functions that wrap/include our UI standards.
+highchart(type = "stock") %>% 
+# Next, we're adding each line as a series. There are multiple ways to do this - but for now, 
+# we'll add each line individually. Start by telling the function which data set you're using
+hc_add_series(
+  pg_month_one,
+  # Define the type of series
+  type = "line", 
+  # Why am I setting the symbol type if the marker is disabled? 
+  # Because when you hover over the data point, a marker will display. I want this marker
+  # to always be a circle. If you don't define it, when you hover over the data point, R
+  # will select a symbol for you and it won't be consistent.
+  marker = list(enabled = FALSE, symbol = "circle"),
+  # Name the line
+  name = "Discharge instructions",
+  # This is OCQI standard blue
+  color = ocqi_colors("blue"),
+  # Define the x and y location of the data point
+  hcaes(x = month_of, y = instruct)) %>% 
+hc_add_series(
+  pg_month_one,
+  type = "line",
+  marker = list(enabled = FALSE, symbol = "circle"),
+  name = "Speed of discharge process",
+  color = ocqi_colors("purple"),
+  hcaes(x = month_of, y = speed)) %>% 
+hc_add_series(
+  pg_month_one,
+  type = "line",
+  marker = list(enabled = FALSE, symbol = "circle"),
+  name = "Readiness for discharge",
+  color = ocqi_colors("orange"),
+  hcaes(x = month_of, y = ready)) %>% 
+# Unfortunately, it's not as straight-forward as you'd think to include the N on the x-axis. 
+# Instead, we will include N as a component in the tool tip, but color it 'transparent' so it doesn't
+# show up as a line.
+hc_add_series(
+  pg_month_one,
+  type = "line",
+  marker = list(enabled = FALSE, symbol = "circle"),
+  name = "N",
+  color = "transparent",
+  hcaes(x = month_of, y = total),
+  # Because this is a transparent line, it wouldn't make sense to display this in the legend
+  showInLegend = FALSE) %>% 
+# If this is enabled, a timeline view will display below your graph. The UI team has decided that
+# it is standard to remove this option. It crowds the graph and doesn't add much value.
+hc_navigator(enabled = FALSE) %>%
+# UI standard. Controls the date range selectors in the top left hand corner of the graph
+hc_rangeSelector(inputEnabled = FALSE,
+                 buttons = list(
+                   list(type = "month", count = 6, text = "6m"),
+                   list(type = "year", count = 1, text = "1y"),
+                   list(type = "year", count = 2, text = "2y"),
+                   list(type = "all", text = "All")),
+                 selected = 2) %>% 
+# UI standard. Displays the exact numbers for the points on your graph, and will display the N.  
+hc_tooltip(split = FALSE, shared = TRUE) %>%
+# UI standard. Allows you to zoom into a graph by highlighting an area with your mouse.
+hc_chart(zoomType = "xy") %>% 
+# These are the export options for the graph, which were detailed at the begining of this document.
+# The only piece you should change is the filename
+hc_exporting(
+      enabled = TRUE,
+      filename = "Press Ganey Discharge Process",
+      formAttributes = list(target = "_blank"),
+      buttons =
+        list(
+          contextButton =
+            list(
+              text = "Export",
+              theme = list(fill = "transparent"),
+              menuItems = export))) %>% 
+# UI standard
+hc_add_theme(hc_theme_ocqi()) %>%
+# This enables the legend underneath the graph. Clicking on a specific item in the legend will
+# allow you to toggle that line on and off.
+hc_legend(enabled = TRUE) %>% 
+# This will describe your data source and the chart type.
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Line") %>% 
+hc_xAxis(
+  type = "datetime",
+  # Specify the data type of your x-axis
+  labels = list(format = "{value:%b-%Y}"),
+  # This 'plotLines' section will detail how to include a vertical intervention line
+  plotLines = 
+   list(
+     list(
+       label = 
+         list(
+           text = "This is an intervention",
+           verticalAlign = "middle"),
+       color = "#FF0000",
+       width = 2,
+       value = datetime_to_timestamp(as.Date("2018-04-01")),
+       dashStyle = "ShortDash")),
+  # This 'plotBands' section will detail how to highlight a specific timeframe
+  plotBands = 
+   list(
+     list(
+       color = "#ebf5fb",
+       from = datetime_to_timestamp(as.Date('2017-11-01')),
+       to = datetime_to_timestamp(as.Date('2018-03-01')))),
+  minorGridLineWidth = 0,
+  gridLineWidth = 0) %>%
+# This will format your y-axis
+hc_yAxis(
+  title = list(text = "Average response"),
+  showLastLabel = TRUE,
+  minorGridLineWidth = 0,
+  gridLineWidth = 0,
+  # Align y axis to the left side
+  opposite = FALSE,
+  # If you don't specify a max and min, you will have a dynamic y-axis. Because this is survey data,
+  # the maximum value will be 5.The rocqi::hc_ocqi_opts() function auto sets the y axis min to zero.
+  # Later in this guide, you will see how to set the max value equal to 10% greater than
+  # your max value.
+  min = 0,
+  max = 5)
+```
+
+```{r chart-size-reactivity, eval=FALSE}
+# The below section will show you how to specify the relative size of your rows/columns and 
+# provide an introduction on using reactive elements (aka: the ability to have the 
+# chart/data/display changed based on user input)
+```
+
+1x2 Grid, Charts
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Overview
+
+The CCU Discharge Optimization QI project is aimed at improving the discharge process in the CCU.
+Efforts include: daily discharge huddles among staff members, streamlined medication reconciliation,
+and improved communication to patients and families about discharge readiness and post-discharge
+instructions. 
+
+<br>
+
+#### Cohort
+
+The cohort consists of all patients who were discharged home from the CCU. Overflow patients are
+excluded.
+
+```{r reactivity-radio-button}
+# You can add R code to your sidebar if you want user input. This is the beginning of creating a
+# "reactive" element. Here, we are creating radio buttons for the users to choose whether they want to
+# see the graphs at the weekly or monthly level. There are a lot of options for taking user input -
+# drop down menus, sliding bars, numeric inputs, etc. Go to this website if you'd like a comprehensive
+# list of user inputs and their arguments:
+# https://rmarkdown.rstudio.com/flexdashboard/shiny.html#inputs__outputs 
+radioButtons(
+  # I'm naming this input "date_dimension". When I call on it later, I'll refer to it as
+  # "input$date_dimension" Think of "input" as a list that contains your dynamic user inputs.
+  inputId = "date_dimension", 
+  # What I want the user to see (the label for the radio buttons)
+  label = h5("Display as..."), 
+  choices =
+    list(
+      # "Weekly" is the name that I want the user to see, "week" is the code behind their choice
+      "Weekly" = "week",
+      # "Monthly" is the name that I want the user to see, "month" is the code behind their choice
+      "Monthly" = "month"), 
+  # When the app is opened, I want "weekly" to be already selected. If your graph depends on input
+  # from this element, the graph will not show up if you do not define which option should be
+  # "selected" by default.
+  selected = "week"
+)
+# Sometimes, you might want the filter you've selected to carry through to other graphs. There are two
+# identical input radio buttons on other pages of this guide: "date_dimension_kaps" and
+# "date_dimension_cols". If I want to maintain this filter on those graphs, then you need to 
+# dynamically update this filter if any of those filters are also updated. If you only want the above
+# filter to apply to this graph, remove the "observeEvent" arguments below.
+observeEvent(input$date_dimension_kaps, {
+  updateRadioButtons(
+    session,
+    "date_dimension",
+    selected = input$date_dimension_kaps)
+})
+
+observeEvent(input$date_dimension_col, {
+  updateRadioButtons(
+    session,
+    "date_dimension",
+    selected = input$date_dimension_col)
+})
+```
+
+```{r chart-size, eval=FALSE}
+# By default, flexdashboard will make all of the rows and columns the same size. You can overwrite 
+# that by defining the size yourself using data-height. The total size that can be occupied on your
+# page is 1000. By default, if you have two charts, the data-height of each row will be 500. If you
+# want one chart to take up 2/3 of the space and the other 1/3, you can define the first as
+# "data-height=650" and the other as "data-height=350". If you want to define the width of your chart
+# (for example, if you're using columns instead of rows), you can use data-width. 
+
+# Be VERY careful when using this option. Ensure that the graphs can be read on various-sized screens.
+```
+
+Row {data-height=550}
+-----------------------------------------------------------------------
+
+```{r reactivity-data-processing}
+# If you have reactive objects (that is what we created above when we made los_hc), you will need to 
+# wrap whatever chart/table you want to make in a "render" function. Since we're making a highcharter
+# chart below, we're using "renderHighchart"
+renderHighchart(
+  hc_spc(
+    data = data_raw,
+    x = HOSP_DISCHRG_DT,
+    y = CCU_LOS_HRS,
+    chart = "s",
+    period = input$date_dimension,
+    metric_label = "CCU LOS") %>%
+  # Title the graph here, instead of "###", so that the user can 
+  # export the graph as an image
+  hc_title(text = list("Average CCU Length of Stay (hrs)"),
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: S") %>% 
+  hc_xAxis(
+    type = "datetime",
+    labels = 
+      if(input$date_dimension == "week") {
+        list(format = "{value:%m-%d-%Y}")
+      } else {
+        list(format = "{value:%b-%Y}")
+      }) %>% 
+  hc_yAxis(title = list(text = "CCU LOS (hrs)"))
+)
+```
+
+```{r chart-size-part-2, eval=FALSE}
+# This chart below is important to see but not as important as the LOS SPC chart, so we wanted to
+# de-emphasize it by making it smaller. {data-height=450} makes this row take up less space - again,
+# only manually resize graphs if it is necessary, it is difficult to predict how this will look on
+# other people's screens
+```
+
+Row {data-height=450}
+-----------------------------------------------------------------------
+
+```{r median-hchart}
+# Notice the reactive element data processing below is the same as what we had before - like above,
+# we also want this chart to react to the user's selection in the radio button
+
+# Right now hc_spc() automatically displays the N in the output. You can also calculate the 
+# n by time period with lubridate and dplyr, and add it as a series on the graph. This is useful
+# for graphs that require additional customization than rocqi::hc_spc() offers
+n_by_date <- 
+  reactive({
+    data_raw %>% 
+    mutate(selected_dt = as.Date(floor_date(HOSP_DISCHRG_DT, input$date_dimension))) %>% 
+    group_by(selected_dt) %>% 
+    summarise(display_n = n(),
+              metric = round(median(CCU_LOS_HRS)))
+  })
+# IMPORTANT NOTE: Once you've made a reactive data frame, you need to use () whenever you refer to it
+# for example: hc_add_series(n_by_date(), ...)
+renderHighchart(
+  highchart(type = "stock") %>% 
+  hc_add_series(
+    n_by_date(),
+    type = "line",
+    marker = 
+      list(
+        enabled = TRUE,
+        symbol = "circle",
+        radius = 3),
+    name = "Median LOS",
+    color = ocqi_colors("purple"),
+    hcaes(x = selected_dt, y = metric)) %>% 
+  # Add N to the chart. Note: If you do this, you'll likely need to set the y-axis limit
+  # especially for propotion (%) metrics
+  hc_add_series(
+    n_by_date(),
+    type = "line",
+    name = "N",
+    marker = list(enabled = FALSE, symbol = "circle"),
+    color = "transparent",
+    enableMouseTracking = TRUE, 
+    hcaes(x = selected_dt, y = display_n)) %>% 
+  # Standard UI options for highstock charts. Includes preset options for the navigator, scrollbar,
+  # tooltip, y axis, rangeSelector, zoomtype, and exporting options.
+  hc_ocqi_opts() %>% 
+  hc_add_theme(hc_theme_ocqi()) %>% 
+  hc_title(text = list("Median CCU Length of Stay (hrs)"),
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Line") %>% 
+  hc_xAxis(
+    type = "datetime",
+    labels = 
+      if(input$date_dimension == "week") {
+        list(format = "{value:%m-%d-%Y}")
+      } else {
+        list(format = "{value:%b-%Y}")
+      }) %>% 
+  hc_yAxis(
+    title = list(text = "CCU LOS (hrs)"),
+    # This section of the code will force the y-axis to maintain a constant value, which is 10%
+    # greater than the max y-value. If you don't do this, then it'll readjust the y-axis,
+    # depending what time frame you are looking at. rocqi::hc_spc() automatically does this
+    max = max(n_by_date()$metric) * 1.1) 
+)
+```
+
+```{r chart-and-data-table, eval=FALSE}
+# Of course, charts are not your only option. You can also utilize interactive data tables to show
+# detailed data. Below, we display both a graph of KAPS rates, and a table with detailed information
+# from each KAPS report.
+```
+
+1x2 Grid, Chart/Table
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Discharge-related KAPS
+
+For this metric, a KAPS event is deemed potentially discharge-related if the following criteria are
+met:
+
+* The event date was between 5 days before or 40 days after the patient's discharge date **AND**  
+* The location specified in the report was the CCU **AND**  
+* The description of the event contained the following words/phrases:  
+    * "Discharge" _OR_  
+    * "AVS" _OR_ 
+    * "After visit summary" _OR_  
+    * "Instructions" _AND_ one of the following: "D/C", "After visit", "Mix"  
+
+**Note:** Because the KAPS event description is free-text, identifying discharge-related KAPS is not
+100% accurate.
+
+```{r KAPS-radio-button}
+radioButtons(
+  inputId = "date_dimension_kaps", 
+  label = h5("Display as..."), 
+  choices =
+    list(
+      "Weekly" = "week",
+      "Monthly" = "month"), 
+  selected = "week"
+)  
+
+observeEvent(input$date_dimension, {
+  updateRadioButtons(
+    session,
+    "date_dimension_kaps",
+    selected = input$date_dimension_kaps)
+})
+
+observeEvent(input$date_dimension_col, {
+  updateRadioButtons(
+    session,
+    "date_dimension_kaps",
+    selected = input$date_dimension_col)
+})
+# This will create a drop-down menu that the user can filter the data table on. I'm setting "All"
+# So that the filter will display "All" if nothing is selected. Otherwise, the selections will filter
+# our data table
+unique_kaps_events <- sort(unique(kaps_detail$SPECIFIC_EVENT_TYPE))
+selectizeInput(
+  "event_type",
+  "Select an Event Type:",
+  choices = c("All", unique_kaps_events),
+  selected = "All"
+)
+```
+
+Row
+-----------------------------------------------------------------------
+
+```{r KAPS-chart}
+# Here we take advantage of the "mulitply" argument to multiply our metric by 1000
+renderHighchart(
+  hc_spc(
+    data = data_raw,
+    x = HOSP_DISCHRG_DT,
+    y = NUMBER_KAPS,
+    multiply = 1000,
+    chart = "u",
+    period = input$date_dimension_kaps,
+    metric_label = "KAPS per 1K D/C's") %>% 
+  hc_title(text = "Number of Discharge-Related KAPS per 1,000 Discharges",
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: U") %>%
+  hc_xAxis(type = "datetime",
+           labels = 
+             if(input$date_dimension_kaps == "week") {
+               list(format = "{value:%m-%d-%Y}")
+             } else {
+               list(format = "{value:%b-%Y}")
+             }
+               ) %>% 
+  hc_yAxis(title = list(text = "# KAPS per 1,000 discharges"))
+)
+```
+
+Row
+-----------------------------------------------------------------------
+
+### KAPS Detail
+
+```{r KAPS-data-table}
+# You can also have interactive data tables in a row/column. Below, we are selecting the specific
+# columns we want to show, processing the dates, and then using the DT package to create a data table
+# that the user can search, sort, filter, or download to a file. More information on how to make
+# interactive data tables coming soon!
+kaps_detail_tbl <- reactive({
+  if (input$event_type == "All") {
+    display_detail <- kaps_detail
+  } else {
+    display_detail <- 
+      kaps_detail %>%
+      filter(SPECIFIC_EVENT_TYPE %in% input$event_type)
+  }
+  
+  display_detail %>%
+    select(CCU_END_DT, EVENT_DT, SPECIFIC_EVENT_TYPE, EVENT_DESC) %>%
+    mutate(CCU_END_DT = as.Date(CCU_END_DT),
+           CCU_END_DT = ymd(CCU_END_DT),
+           EVENT_DT = ymd(EVENT_DT))
+})
+# renderDT is necessary if the dataframe you're using comes out of a reactive()
+renderDT( 
+  datatable(
+    kaps_detail_tbl(),
+    rownames = FALSE,
+    extensions = "Buttons",
+    colnames = c("Discharge Date", "Event Date", "Event Type", "Description"),
+    options = 
+      list(
+        searching = TRUE,
+        # Show 5 rows per page
+        pageLength = 5,
+        scrollX = TRUE,
+        scrollY = "100vh",
+        autoWidth = TRUE,
+        # Defines the physical placement of options (search, page, filter, etc) - for more info
+        # go here: https://datatables.net/reference/option/dom
+        dom = "Bpfrti", 
+        # How the table should be sorted by default - 0 refers to the first column we've called
+        # (in this case, Discharge Date), and desc means in descending order
+        order = list(0, "desc"),
+        # Include a button for the user to download a CSV and name that file they
+        # download "table_data"
+        buttons = 
+          list(
+            list(
+              extend = "csv",
+              filename= "table_data")
+          ),
+        columns.defaultcontent = "",
+        # Manually set width of columns - here, target #3 (the 4th column in your dataframe) will
+        # be 7 times wider than the first 3 columns (targets 0, 1, 2)
+        columnDefs = 
+          list(
+            list(
+              width ="100px", 
+              targets = c(0:2)),
+            list(
+              width ="700px",
+              targets = 3)
+          )
+       )
+   )
+) 
+```
+
+```{r tabsets, eval=FALSE}
+# If you want to create multiple tabs within your pages (not show all charts/tables at once),
+# you can use tabsets. This is especially useful if you have a lot of things to show for one group of
+# metrics, but don't want to squish them all on one view. Simply putting {.tabset} after your
+# row/column will do this for you. Adding {.tabset-fade} will create a fade in/out effect as you
+# switch between tabs.
+```
+
+Tabsets
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Readmission
+
+A patient is counted as a readmission if they are admitted to an inpatient unit at CHOP within 30 days
+of discharge from the CCU. Elective visits and visits involving chemotherapy are excluded.
+
+<br>
+
+#### Revisit
+
+A patient is counted as a revisit if they visit the CHOP ED within 30 days of CCU discharge.
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### 30 Day Readmit/Revisit Rate
+
+```{r readmit-reactive}
+readmit_nona_tab <- 
+  data_raw %>% 
+  filter(!is.na(READMIT_30DAY_IND),
+         READREV_INCLU_IND == 1)
+
+hc_spc(
+  data = readmit_nona_tab,
+  x = HOSP_DISCHRG_DT,
+  y = READMIT_30DAY_IND,
+  chart = "p",
+  period = "month",
+  metric_label = "% 30 Day Readmit") %>% 
+  hc_xAxis(
+    type = "datetime",
+    labels = list(format = "{value:%b-%Y}")) %>% 
+  hc_title(text = list("Percent of Discharges with Readmission or Revisit within 30 Days"),
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: P") %>%
+  hc_yAxis(title = list(text = "% Readmission or Revisit"),
+           max = 100)
+```
+
+### Event Type
+
+```{r event-breakdown-reactive}
+event_tab <- 
+  kaps_detail %>%
+  group_by(SPECIFIC_EVENT_TYPE) %>%
+  summarise(number_pat = n_distinct(PAT_KEY)) %>%
+  arrange(desc(number_pat),SPECIFIC_EVENT_TYPE)
+
+hchart(
+  event_tab, 
+  type = "column", 
+  hcaes(x = SPECIFIC_EVENT_TYPE, y = number_pat), 
+  color = ocqi_colors("blue"), 
+  dataLabels = list(enabled = TRUE)) %>%  
+hc_ocqi_opts() %>% 
+hc_add_theme(hc_theme_ocqi()) %>% 
+hc_title(text = list("Event Counts by Event Type"),
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Bar") %>%
+hc_yAxis(title = list(text = "Number of Patients")) %>% 
+hc_xAxis(title = list(text = "Event Type")) 
+```
+
+```{r grid-example, eval=FALSE}
+# You can make a grid-type layout by putting multiple charts in one row. By default, all charts will
+# be of equal size. However, as discussed previously, you can define the relative sizes of the charts
+# using data-height or data-width if you wish.
+```
+
+2x2 Grid
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Overview
+
+The CCU Discharge Optimization QI project is aimed at improving the discharge process in the CCU.
+Efforts include: daily discharge huddles among staff members, streamlined medication reconciliation,
+and improved communication to patients and families about discharge readiness and post-discharge
+instructions. 
+
+<br>
+
+#### Cohort
+
+The cohort consists of all patients who were discharged home from the CCU. Overflow patients are
+excluded.
+
+Row
+-----------------------------------------------------------------------
+
+```{r average-LOS-in-grid}
+hc_spc(
+    data = data_raw,
+    x = HOSP_DISCHRG_DT,
+    y = CCU_LOS_HRS,
+    chart = "s",
+    period = "month",
+    metric_label = "CCU LOS") %>%
+hc_title(text = list("Average CCU Length of Stay (hrs)"),
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: S") %>%
+hc_xAxis(
+  type = "datetime",
+  labels = list(format = "{value:%b-%Y}")) %>% 
+hc_yAxis(title = list(text = "CCU LOS (hrs)"))
+```
+
+```{r median-LOS-in-grid}
+n_by_month <- 
+  data_raw %>% 
+    mutate(selected_dt = as.Date(floor_date(HOSP_DISCHRG_DT, "month"))) %>% 
+    group_by(selected_dt) %>% 
+    summarise(display_n = n(),
+              metric = round(median(CCU_LOS_HRS)))
+
+highchart(type = "stock") %>% 
+hc_add_series(
+  n_by_month,
+  type = "line",
+  marker = 
+    list(
+      enabled = TRUE,
+      symbol = "circle",
+      radius = 3),
+  name = "Median LOS",
+  color = ocqi_colors("purple"),
+  hcaes(x = selected_dt, y = metric)) %>% 
+hc_add_series(
+  n_by_month,
+  type = "line",
+  name = "N",
+  marker = list(enabled = FALSE, symbol = "circle"),
+  color = "transparent",
+  enableMouseTracking = TRUE, 
+  hcaes(x = selected_dt, y = display_n)) %>% 
+hc_ocqi_opts() %>% 
+hc_add_theme(hc_theme_ocqi()) %>% 
+hc_title(text = list("Median CCU Length of Stay (hrs)"),
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Line") %>% 
+hc_xAxis(
+  type = "datetime",
+  labels = list(format = "{value:%b-%Y}")) %>% 
+hc_yAxis(
+  title = list(text = "CCU LOS (hrs)"),
+  max = max(n_by_month$metric) * 1.1) 
+
+```
+
+Row
+-----------------------------------------------------------------------
+
+```{r readmit-revisit-in-grid}
+hc_spc(
+  data = readmit_nona_tab,
+  x = HOSP_DISCHRG_DT,
+  y = READMIT_30DAY_IND,
+  chart = "p",
+  period = "month",
+  metric_label = "% 30 Day Readmit") %>% 
+hc_title(text = list("Percent of Discharges with Readmission or Revisit within 30 Days"),
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: P") %>%
+  hc_xAxis(
+    type = "datetime",
+    labels = list(format = "{value:%b-%Y}")) %>% 
+  hc_yAxis(title = list(text = "% Readmission or Revisit"))
+```
+
+```{r breakdown-in-grid}
+breakdown_grid <- 
+  readmit_nona_tab %>%
+  mutate(date_aggr_dt = as.Date(floor_date(HOSP_DISCHRG_DT, "month"))) %>%
+  group_by(date_aggr_dt) %>%
+  summarise(denom = n(),
+            readmit = round((sum(READMIT_30DAY_IND)/sum(denom)) * 100, digits = 1),
+            revisit = round((sum(REVISIT_30DAY_IND)/sum(denom)) * 100, digits = 1))
+
+highchart(type="stock") %>% 
+hc_add_series(
+  breakdown_grid,
+  name = "Readmissions",
+  # Add percent to the value
+  tooltip = list(valueSuffix = "%"),
+  hcaes(x = date_aggr_dt, y = readmit),
+  type = "line",
+  marker = list(enabled = FALSE, symbol="circle"),
+  color = ocqi_colors("blue"),
+  dashStyle = "Solid") %>%
+hc_add_series(
+  breakdown_grid,
+  name = "Revisits",
+  tooltip = list(valueSuffix = "%"),
+  hcaes(x = date_aggr_dt, y = revisit),
+  type = "line",
+  marker = list(enabled = FALSE, symbol="circle"),
+  color = ocqi_colors("purple"),
+  dashStyle = "Solid") %>%
+hc_add_series(
+  breakdown_grid,
+  name = "N",
+  hcaes(x = date_aggr_dt, y = denom),
+  type = "line",
+  marker = list(enabled = FALSE, symbol="circle"),
+  color = "transparent",
+  showInLegend = FALSE,
+  enableMouseTracking = TRUE,
+  dashStyle = "Solid") %>%
+hc_add_theme(hc_theme_ocqi()) %>%
+hc_ocqi_opts() %>% 
+hc_legend(enabled = TRUE)  %>% 
+hc_title(text = list("Breakdown of Revisits and Readmissions"),
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Line") %>%
+hc_xAxis(
+  type = 'datetime',
+  labels = list(format = '{value:%b-%Y}')) %>% 
+hc_yAxis(
+  title = list(text = "% Readmission or Revisit"),
+  labels = list(format = "{value}%"),
+  min = 0,
+  max = 100) 
+```
+
+```{r column-example, eval=FALSE}
+# Below is an example using a column-based layout instead of rows, including some tabsets for fun.
+# Note that we have over-ridden the default we set in the YAML to say that this page should be in
+# columns using {data-orientation=columns} and then calling each new chart using "Column" instead 
+# of "Row".
+```
+
+Column {data-orientation=columns}
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Overview
+
+The CCU Discharge Optimization QI project is aimed at improving the discharge process in the CCU.
+Efforts include: daily discharge huddles among staff members, streamlined medication reconciliation,
+and improved communication to patients and families about discharge readiness and post-discharge
+instructions. 
+
+<br>
+
+#### Cohort
+
+The cohort consists of all patients who were discharged home from the CCU. Overflow patients are
+excluded.
+
+```{r radio-button-column}
+radioButtons(
+  inputId = "date_dimension_col", 
+  label = h5("Select Date Type"), 
+  choices =
+    list(
+      "Weekly" = "week",
+      "Monthly" = "month"), 
+  selected = "week"
+)  
+
+observeEvent(input$date_dimension_kaps, {
+  updateRadioButtons(
+    session,
+    "date_dimension_col",
+    selected = input$date_dimension_kaps)
+})
+
+observeEvent(input$date_dimension, {
+  updateRadioButtons(
+    session,
+    "date_dimension_col",
+    selected = input$date_dimension)
+})
+```
+
+
+Column
+-----------------------------------------------------------------------
+
+### Average CCU Length of Stay (hrs)
+
+```{r avg-LOS-column}
+renderHighchart(
+  hc_spc(
+    data = data_raw,
+    x = HOSP_DISCHRG_DT,
+    y = CCU_LOS_HRS,
+    chart = "s",
+    period = input$date_dimension_col,
+    metric_label = "CCU LOS") %>%
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: S") %>% 
+  hc_xAxis(
+    type = "datetime",
+    labels = 
+      if(input$date_dimension_col == "week") {
+        list(format = "{value:%m-%d-%Y}")
+      } else {
+        list(format = "{value:%b-%Y}")
+      }) %>% 
+  hc_yAxis(title = list(text = "CCU LOS (hrs)"))
+)
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### 30 Day Readmit/Revisit Rate
+
+```{r readmit-revisit-column}
+renderHighchart(
+  hc_spc(
+    data = readmit_nona_tab,
+    x = HOSP_DISCHRG_DT,
+    y = READMIT_30DAY_IND,
+    chart = "p",
+    period = input$date_dimension_col,
+    metric_label = "% 30 Day Readmit") %>% 
+  hc_title(text = list("Percent of Discharges with Readmission or Revisit within 30 Days"),
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: P") %>%
+  hc_xAxis(
+    type = "datetime",
+    labels = 
+      if(input$date_dimension_col == "week") {
+        list(format = "{value:%m-%d-%Y}")
+      } else {
+        list(format = "{value:%b-%Y}")
+      }) %>%  
+  hc_yAxis(title = list(text = "% Readmission or Revisit"))
+)
+```
+
+### Readmit vs. Revisit
+
+```{r breakdown-column}
+breakdown_grid <- 
+  reactive({
+    readmit_nona_tab %>%
+    mutate(date_aggr_dt = as.Date(floor_date(HOSP_DISCHRG_DT, input$date_dimension_col))) %>%
+    group_by(date_aggr_dt) %>%
+    summarise(denom = n(),
+              readmit = round((sum(READMIT_30DAY_IND)/sum(denom)) * 100, digits = 1),
+              revisit = round((sum(REVISIT_30DAY_IND)/sum(denom)) * 100, digits = 1)) 
+  })
+
+renderHighchart(
+  highchart(type="stock") %>% 
+  hc_add_series(
+    breakdown_grid(),
+    name = "Readmissions",
+    # Add percent to the value
+    tooltip = list(valueSuffix = "%"),
+    hcaes(x = date_aggr_dt, y = readmit),
+    type = "line",
+    marker = list(enabled = FALSE, symbol="circle"),
+    color = ocqi_colors("blue"),
+    dashStyle = "Solid") %>%
+  hc_add_series(
+    breakdown_grid(),
+    name = "Revisits",
+    # Add percent to the value
+    tooltip = list(valueSuffix = "%"),
+    hcaes(x = date_aggr_dt, y = revisit),
+    type = "line",
+    marker = list(enabled = FALSE, symbol="circle"),
+    color = ocqi_colors("purple"),
+    dashStyle = "Solid") %>%
+  hc_add_series(
+    breakdown_grid(),
+    name = "N",
+    hcaes(x = date_aggr_dt, y = denom),
+    type = "line",
+    marker = list(enabled = FALSE, symbol="circle"),
+    color = "transparent",
+    showInLegend = FALSE,
+    enableMouseTracking = TRUE,
+    dashStyle = "Solid") %>%
+  hc_add_theme(hc_theme_ocqi()) %>%
+  hc_ocqi_opts() %>% 
+  hc_legend(enabled = TRUE)  %>% 
+  hc_title(text = list("Breakdown of Revisits and Readmissions"),
+           align = "left") %>% 
+  hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: Line") %>%
+  hc_xAxis(
+      type = "datetime",
+      labels = 
+        if(input$date_dimension_col == "week") {
+          list(format = "{value:%m-%d-%Y}")
+        } else {
+          list(format = '{value:%b-%Y}')
+        }) %>%  
+  hc_yAxis(
+    title = list(text = "% Readmission or revisit"),
+    labels = list(format = "{value}%"),
+    min = 0,
+    max = 100)  
+)
+```
+
+```{r making-value-boxes, eval=FALSE}
+# The paeg below is the page for our value boxes - boxes at the top of your app where you just want to
+# display a number. Notice that we've defined a "row" and then code for two value boxes below - these
+# boxes will be automatically placed next to each other. The ### titles underneath are going to serve
+# as the captions for the value box - so, for example, our first value box will display a number based
+# on the data, and then beneath it will say "Discharges with readmissions this calendar year" 
+# (in bold, because we surrounded it with **).
+```
+
+Value Boxes
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Readmission
+
+A patient is counted as a readmission if they are admitted to an inpatient unit at CHOP within 30 days
+of discharge from the CCU. Elective visits and visits involving chemotherapy are excluded.
+
+<br>
+
+#### Revisit
+
+A patient is counted as a revisit if they visit the CHOP ED within 30 days of CCU discharge.
+
+Row 
+-----------------------------------------------------------------------
+
+### **Discharges with readmissions this calendar year** 
+
+```{r readmit-this-year}
+# Creating the value we want to display
+readmit_year <- 
+  data_raw %>%
+  filter(year(HOSP_DISCHRG_DT) == year(today()),
+         READMIT_30DAY_IND == 1) %>%
+  # Number of discharges with a readmission in this calendar year
+  summarise(total = n()) 
+
+renderValueBox ({
+  valueBox(
+    readmit_year$total,
+    # icon for the valuebox - see options here: https://fontawesome.com/icons?d=gallery&m=free
+    icon ="fa-bed", 
+    # Thanks to our CSS we have built in colors for "primary", "info", "success", "warning", and
+    # "danger". You can also supply custom colors to here as well. Run ??valueBox for more info.
+    color = "success")
+})
+```
+
+### **Discharges with revisits this calendar year** 
+
+```{r revisit-this-year}
+revisit_year <- 
+  data_raw %>%
+  filter(year(HOSP_DISCHRG_DT) == year(today()),
+         REVISIT_30DAY_IND == 1) %>%
+  summarise(total = n()) 
+
+renderValueBox ({
+  valueBox(
+    revisit_year$total,
+    icon ="fa-medkit", 
+    color = "primary") 
+})
+```
+
+Row 
+-----------------------------------------------------------------------
+
+```{r readmit-valuebox}
+hc_spc(
+  data = readmit_nona_tab,
+  x = HOSP_DISCHRG_DT,
+  y = READMIT_30DAY_IND,
+  chart = "p",
+  period = "month",
+  metric_label = "% 30 Day Readmit") %>%
+hc_title(text = "Percent of Discharges with Readmission or Revisit within 30 Days",
+         align = "left") %>% 
+hc_credits(enabled = TRUE, text = "Data Source: CDW, Chart Type: P") %>%
+hc_xAxis(
+  type = "datetime",
+  labels = list(format = "{value:%b-%Y}")) %>% 
+hc_yAxis(title = list(text = "% Readmission or Revisit"),
+         max = 100)
+```
+
+```{r pt-detail-intro, eval=FALSE}
+# As we know, it is often useful to have a table with detailed patient information for clinicians
+# to dive deeper into the data. Here we create a new page with an interactive table similar to what
+# we did above with the KAPS data.
+```
+
+Patient detail
+======================================================================
+
+Sidebar {.sidebar}
+----------------------------
+
+#### Patient detail
+
+This table displays relevant details for patients in the cohort. Click on the column headers to
+rearrange the order, and use the search function to look up specific patients or keywords. To save the
+data for further exploration, click the "CSV" button to download the data file to a computer.
+
+Row
+-----------------------------------------------------------------------
+
+### Patient Detail Table
+
+```{r patient-detail}
+pt_detail <-
+  data_raw %>%
+  select(PAT_MRN_ID, FULL_NM, CCU_STRT_DT, CCU_END_DT, CCU_LOS_HRS,
+         READMIT_30DAY_IND, REVISIT_30DAY_IND, NUMBER_KAPS) %>%
+  mutate(CCU_LOS_HRS = round(CCU_LOS_HRS, digits = 1),
+         READMIT_30DAY_IND = 
+           case_when(READMIT_30DAY_IND == 1 ~ "Yes",
+                     READMIT_30DAY_IND == 0 ~ "No",
+                     is.na(READMIT_30DAY_IND) ~ "Unknown"),
+         REVISIT_30DAY_IND = 
+           case_when(REVISIT_30DAY_IND==1 ~ "Yes",
+                     REVISIT_30DAY_IND==0 ~ "No"))
+
+pt_detail$CCU_STRT_DT <- as.Date(pt_detail$CCU_STRT_DT)
+pt_detail$CCU_END_DT <- as.Date(pt_detail$CCU_END_DT)
+
+# Be careful how you format the data types here, depending on how you format, you will be given
+# different options for filtering.
+
+# Notice we didn't use DT::renderDT here - this is because pt_detail did not come out of a
+# reactive context
+datatable(
+  pt_detail, 
+  rownames = FALSE,
+  filter = "top",
+  extensions = "Buttons",
+  colnames = c("MRN", "Name", "CCU Arrival", "Discharge", "CCU LOS (hrs)",
+               "30-day readmission", "30-day revisit", "# Discharge-related KAPS"),
+  options = 
+    list(
+      searching = TRUE, 
+      pageLength = 20, 
+      scrollX = TRUE,
+      scrollY = "100vh",
+      autoWidth = TRUE,
+      dom = "Bpfrti",
+      order = list(3,"desc"),
+      buttons = 
+        list(
+          list(
+            extend = "csv",
+            filename= "pt_detail_data")
+        ),
+      columns.defaultcontent = "",
+      columnDefs = 
+        list(
+          list(
+            width ="200px",
+            targets = c(0:7))
+         )
+    )
+)
+```
+
+```{r about-page, eval=FALSE}
+# The UI group has decided to include a page that details the project description, how to use the
+# dashboard, and contact information. For consistency, please maintain the About page as the 
+# last tab in all dashboards.
+```
+
+About {data-orientation=columns}
+======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Project Overview
+
+This section will describe the project.
+
+The CCU Discharge Optimization QI project is aimed at improving the discharge process in the CCU.
+Efforts include: daily discharge huddles among staff members, streamlined medication reconciliation,
+and improved communication to patients and families about discharge readiness and post-discharge
+instructions. 
+
+<h4>Cohort Definition</h4>
+
+Describe the inclusion and exclusion criteria for this project cohort.
+
+The cohort consists of all patients who were discharged home from the CCU. Overflow patients are
+excluded.
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Navigating the Application
+
+To view a metric, navigate to the approproate tab along the top. 
+All of the charts are interactive: you can hover over points to see values, select the date range shown
+by the graph (either manually or with the pre-set options), and click and drag to zoom. You can also
+save the chart images and data by clicking on the menu icon located in the upper right-hand corner of
+each chart.
+
+The application refreshes every single time the page is loaded, but the data will always be one day
+behind.
+
+### Contact Information
+
+| Role | Name | Email 
+|:------|:------|:-------
+Clinical Lead | Name | name@email.chop.edu
+Clinical Lead | Name | name@email.chop.edu
+Improvement Advisor | Name | name@email.chop.edu
+Data Analyst | Name | name@email.chop.edu
