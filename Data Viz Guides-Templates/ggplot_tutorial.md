@@ -555,13 +555,12 @@ Sometimes the data you have is already aggregated and you know each of the quart
         ungroup()
 ```
 
-    ## # A tibble: 4 x 8
-    ##   patient_class    y0   y25   y50  mean   y75  y100     N
-    ##   <chr>         <dbl> <dbl> <dbl> <dbl> <dbl> <dbl> <int>
-    ## 1 Day Surgery      5.  20.0  43.0  59.5  77.0  617. 34750
-    ## 2 Inpatient       11.  74.0 116.  157.  200.   985. 12038
-    ## 3 Observation     10.  55.0  78.0 106.  133.   702.  5686
-    ## 4 Outpatient      13.  22.2  39.5  48.5  57.5  184.    56
+| patient\_class |   y0|    y25|    y50|       mean|    y75|  y100|      N|
+|:---------------|----:|------:|------:|----------:|------:|-----:|------:|
+| Day Surgery    |    5|  20.00|   43.0|   59.49917|   77.0|   617|  34750|
+| Inpatient      |   11|  74.00|  116.0|  156.60375|  200.0|   985|  12038|
+| Observation    |   10|  55.00|   78.0|  106.20559|  133.0|   702|   5686|
+| Outpatient     |   13|  22.25|   39.5|   48.51786|   57.5|   184|     56|
 
 ``` r
     p1 <-
