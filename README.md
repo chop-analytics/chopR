@@ -1,5 +1,5 @@
 # chopR
-This repo contains various materials developed by analysts in the Office of Quality Improvement (OCQI) at the Children's Hospital of Philadelphia which were used to help teach the analytics team R.
+This repo contains various materials developed by analysts in the Office of Quality Improvement (OCQI) at the Children's Hospital of Philadelphia that are used to train new and existing analysts on how to use R. Although these materials have been tailored to the needs of this specific analyst group, they could be useful training materials for other analysts wanting to adopt R, particularly those in a health care setting. 
 
 # What's in this repository?
 
