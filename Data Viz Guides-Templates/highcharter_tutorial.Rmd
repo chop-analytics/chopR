@@ -10,6 +10,8 @@ editor_options:
   chunk_output_type: console
 ---
 
+The output of this .Rmd can be found here: https://chop-analytics.github.io/chopR/docs/highcharter_tutorial.html
+
 ```{r, echo=F, include=F}
 library(highcharter)
 #install.packages('viridis')
@@ -274,7 +276,7 @@ One of the coolest plots in highcharter is a timeseries plot. It's a little bit 
 
 There are loads of options here: you can select a pre-defined date range at the top left, specify the date range at top right, or use the slider at the bottom.
 
-```{r, echo=T, warning = F}
+```{r, echo=T, warning = F, message = F}
 
 weekly <- cases %>% 
   dplyr::mutate(week_of = floor_date(surgery.date, unit = 'weeks')) %>%
@@ -287,8 +289,7 @@ weekly <- cases %>%
          "kop"="KING OF PRUSSIA DAY SURGERY",
          "voorhees"="VOORHEES DAY SURGERY")
 
-table(cases$location)
-#timeseries plot
+
 highchart(type = "stock") %>% 
   hc_add_series(weekly, type = "line", id = "Main", name = "Main", hcaes(x=as.Date(week_of), y=main)) %>% 
   hc_add_series(weekly, type = "line", id = "line", name = "Voorhees", hcaes(x=as.Date(week_of), y=voorhees))%>% 

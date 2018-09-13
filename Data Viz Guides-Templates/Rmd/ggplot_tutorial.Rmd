@@ -3,27 +3,35 @@ title: "ggplot2 Tutorial"
 output:
   md_document:
     variant: markdown_github
+    df_print: kable
+    #code_folding: show
     toc: true
+    #toc_depth: 4
+    #toc_float: true
+     # collapsed: true
+      #smooth_scroll: false
+editor_options:
+  chunk_output_type: console
 ---
 
-<style type="text/css">
+<!-- <style type="text/css"> -->
 
-    body{ /* Normal  */
-          font-size: 14px;
-      }
+<!--     body{ /* Normal  */ -->
+<!--           font-size: 14px; -->
+<!--       } -->
 
- </style>
+<!--  </style> -->
 
-<script>
-    $(document).ready(function() {
-      $items = $('div#TOC li');
-      $items.each(function(idx) {
-        num_ul = $(this).parentsUntil('#TOC').length;
-        $(this).css({'text-indent': num_ul * 10, 'padding-left': 0});
-      });
-    
-    });
-</script>
+<!-- <script> -->
+<!--     $(document).ready(function() { -->
+<!--       $items = $('div#TOC li'); -->
+<!--       $items.each(function(idx) { -->
+<!--         num_ul = $(this).parentsUntil('#TOC').length; -->
+<!--         $(this).css({'text-indent': num_ul * 10, 'padding-left': 0}); -->
+<!--       }); -->
+
+<!--     }); -->
+<!-- </script> -->
 
 ```{r setup, include = F}
     knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.height = 3.5)
@@ -953,7 +961,7 @@ cases %>%
 We can make some more advanced tables using  the `kableExtra` and `formattable` packages, whch work really nicely with `kable` and `dplyr`. The table below is a basic table of counts of cases at each location, with cell shading depending on the number of cases:
 
 ```{r, advanced_table}
-
+ 
 cases %>%
   group_by(location) %>%
   summarise(count = n()) %>%
@@ -965,28 +973,4 @@ cases %>%
                         full_width = F)
                     
 ```
-
-The table below shows some more advanced formatting options all at once. The full list of kableExtra options are listed [here](https://haozhu233.github.io/kableExtra/awesome_table_in_html.html#overview)
-
-```{r, ugly_advanced_table}
-
-cases %>%
-  group_by(location, patient_class) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count)) %>%
-  ungroup() %>%
-  tidyr::spread(key = patient_class, value = count, fill= 0) %>%
-  mutate(Inpatient = cell_spec(Inpatient, "html", angle = (1:5)*60,
-                                     background = "red", color = "white", align = "center"),
-                `Day Surgery` = ifelse(`Day Surgery`> 4000,
-                                       cell_spec(`Day Surgery`, "html", color = "red", bold = T),
-                                       cell_spec(`Day Surgery`, "html", color = "green", italic = T)),
-                Outpatient = color_bar("lightgreen")(Outpatient)) %>%
-  rename("Location" = location) %>%
-  knitr::kable("html", escape = F) %>%
-  kableExtra::kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
-                        full_width = F, 
-                        position = "float_left")
-```
-  
   

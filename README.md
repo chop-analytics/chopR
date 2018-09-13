@@ -10,7 +10,7 @@ There are a few things to note about these guide/templates:
 
 1. The ggplot tutorial is included both as a .md and .Rmd file for users' convenience. 
 
-2. The highcharter tutorial is only included as a .Rmd file because the html output of this .Rmd is not supported by github. Users can view the output of this tutorial here: 
+2. The highcharter tutorial is only included as a .Rmd file because the html output of this .Rmd is not supported by github. Users can view the output of this tutorial here: https://chop-analytics.github.io/chopR/docs/highcharter_tutorial.html
 
 3. The flexdashboard template was built specifically for CHOP analysts and, therefore, cannot be used as-s by users outside of CHOP. Below are the following reasons for this: 
 
