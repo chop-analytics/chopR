@@ -5,7 +5,11 @@ This repo contains various materials developed by analysts in the Office of Qual
 
 ## Data Viz Guides-Templates
  
-This folder contains ggplot and highcharter guides along with a flexdashboard template that is used by OCQI to create R dashboards. You can use these files to being learning how to visualize your data in R and also how to organize this visualizations into a dashboard. Please note that the flexdashboard template is dependent upon an internal R package developed by OCQI called `rocqi`, which currently is only available to CHOP employees. If you are a CHOP employee that wishes to download this package, please see this repo for documentation: https://github.research.chop.edu/CQI/rocqi. 
+This folder contains ggplot and highcharter guides along with a flexdashboard template that is used by OCQI to create R dashboards. You can use these files to being learning how to visualize your data in R and also how to organize this visualizations into a dashboard.
+There are a few things to note about these guide/templates: 
+1. The ggplot tutorial is included both as a .md and .Rmd file for users' convenience. 
+2. The highcharter tutorial is only included as a .Rmd file because the html output of this .Rmd is not supported by github. Users can locally knit this .Rmd to view the highcharter tutorial output. 
+3. The flexdashboard template is dependent upon an internal R package developed by OCQI called `rocqi`, which currently is only available to CHOP employees. If you are a CHOP employee that wishes to download this package, please see this repo for documentation: https://github.research.chop.edu/CQI/rocqi. 
 
 ## Instructional Sessions
 
