@@ -1,59 +1,27 @@
--   [Introduction](#introduction)
--   [Barplots](#barplots)
-    -   [The Basics](#the-basics)
-    -   [Formatted Barplot](#formatted-barplot)
-        -   [Fill Option](#fill-option)
-        -   [Remove Legend](#remove-legend)
-        -   [Custom colors](#custom-colors)
-        -   [Bar Plot Variations](#bar-plot-variations)
-        -   [Facetted Bar Plot](#facetted-bar-plot)
--   [Line Plots](#line-plots)
-    -   [The Basics](#the-basics-1)
-    -   [Formatted Lineplot](#formatted-lineplot)
-        -   [Multi-Line Plot](#multi-line-plot)
-        -   [Reference Lines](#reference-lines)
--   [Scatterplots](#scatterplots)
-    -   [The Basics](#the-basics-2)
-    -   [Coloring a Scatterplot](#coloring-a-scatterplot)
--   [Boxplots](#boxplots)
-    -   [The basics](#the-basics-3)
-    -   [Horizontal layout](#horizontal-layout)
-    -   [Formatting](#formatting)
-    -   [Handling outliers](#handling-outliers)
-    -   [Plotting everything (no comparison)](#plotting-everything-no-comparison)
-    -   [Aggregated data](#aggregated-data)
-    -   [Violin Plots](#violin-plots)
--   [Reference lines](#reference-lines-1)
-    -   [hline & vline](#hline-vline)
--   [Histograms](#histograms)
-    -   [Adjusting \# of bins](#adjusting-of-bins)
-    -   [Adjusting bin intervals](#adjusting-bin-intervals)
--   [Facet layouts](#facet-layouts)
-    -   [facet\_grid: one column by another column](#facet_grid-one-column-by-another-column)
-        -   [Only 1 split and using the period `.`](#only-1-split-and-using-the-period-.)
-        -   [labeller](#labeller)
-        -   [switch](#switch)
-    -   [facet\_wrap: one column repeating in a grid](#facet_wrap-one-column-repeating-in-a-grid)
-        -   [Specifying rows and column parameters](#specifying-rows-and-column-parameters)
-    -   [Advanced tips](#advanced-tips)
-        -   [scales & space](#scales-space)
-        -   [layers within facets](#layers-within-facets)
--   [Plotting dates](#plotting-dates)
-    -   [Angled text](#angled-text)
-    -   [quarters](#quarters)
-    -   [some other approaches](#some-other-approaches)
-        -   [facets](#facets)
-        -   [year-over-year comparisons](#year-over-year-comparisons)
-    -   [date formats](#date-formats)
--   [Nice HTML Tables](#nice-html-tables)
-    -   [Basic Tables](#basic-tables)
-    -   [Advanced Tables](#advanced-tables)
+---
+title: "ggplot2 Tutorial"
+output:
+  md_document:
+    variant: markdown_github
+    df_print: kable
+    #code_folding: show
+    toc: true
+    #toc_depth: 4
+    #toc_float: true
+     # collapsed: true
+      #smooth_scroll: false
+editor_options:
+  chunk_output_type: console
+---
 
 <!-- <style type="text/css"> -->
+
 <!--     body{ /* Normal  */ -->
 <!--           font-size: 14px; -->
 <!--       } -->
+
 <!--  </style> -->
+
 <!-- <script> -->
 <!--     $(document).ready(function() { -->
 <!--       $items = $('div#TOC li'); -->
@@ -61,14 +29,19 @@
 <!--         num_ul = $(this).parentsUntil('#TOC').length; -->
 <!--         $(this).css({'text-indent': num_ul * 10, 'padding-left': 0}); -->
 <!--       }); -->
+
 <!--     }); -->
 <!-- </script> -->
-Introduction
-============
+
+```{r setup, include = F}
+    knitr::opts_chunk$set(echo = T, warning = F, message = F, fig.height = 3.5)
+```
+
+
+# Introduction
 
 This tutorial is designed to go over the common chart types and formatting options of ggplot2. It is not exhaustive, but is enough to get you up and running if you're a first time user and serve as a quick reference guide as you continue to learn R. First, let's load these libraries.
-
-``` r
+```{r load_packages}
 library(tidyverse) #data manipulation & visualization: ggplot2, dplyr, tidyr, readr
 library(ggthemes)  #colors for ggplot2
 library(scales)    #formatting axes and labels in ggplot2
@@ -82,15 +55,13 @@ library(RCurl)
 library(formattable)
 ```
 
-Barplots
-========
+# Barplots
 
-The Basics
-----------
-
+## The Basics
 Let's read in the data, format it, and do a simple plot of the total number of cases at Main ORs and each ASC:
 
-``` r
+```{r load_data}
+
 path <- getURL("https://raw.githubusercontent.com/chop-analytics/chopR/develop/Data%20Viz%20Guides-Templates/Rmd/Data/ggplot_demo_data.csv")
 cases <- 
     read_csv(path) %>% 
@@ -105,7 +76,9 @@ cases <-
            )
 ```
 
-``` r
+
+```{r barplots}
+
 #cases by location
 loc <- cases %>%
   dplyr::group_by(location) %>%
@@ -113,16 +86,14 @@ loc <- cases %>%
 
 ggplot(loc, aes(x=location, y=count)) + 
   geom_bar(stat="identity")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/barplots-1.png)
+## Formatted Barplot
+That looks pretty bad. Let's format it a little more! We are going to change the default order, introduce some transparency and change the color, format the y axis, flip the plot, add a simple theme and add some labels:  
 
-Formatted Barplot
------------------
+```{r barplot_formatted}
 
-That looks pretty bad. Let's format it a little more! We are going to change the default order, introduce some transparency and change the color, format the y axis, flip the plot, add a simple theme and add some labels:
-
-``` r
 ggplot(loc, aes(x=reorder(location, count), y=count)) + 
   geom_bar(stat="identity", alpha = .8, fill = "dodgerblue") + 
   scale_y_continuous(labels=comma) + 
@@ -131,15 +102,15 @@ ggplot(loc, aes(x=reorder(location, count), y=count)) +
   labs(x= " ", 
        y = "Total Cases", 
        title = "CY17 Case Volume by Location")
+
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/barplot_formatted-1.png)
-
 ### Fill Option
+If you want each bar to be its own color, use ```fill = location``` and remove the ```fill``` option from ```geom_bar```. ggplot will pick some colors for you
 
-If you want each bar to be its own color, use `fill = location` and remove the `fill` option from `geom_bar`. ggplot will pick some colors for you
+```{r barplot_group}
 
-``` r
 ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) + 
   geom_bar(stat="identity", alpha = .8) + 
   scale_y_continuous(labels=scales::comma) + 
@@ -148,15 +119,13 @@ ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) +
   labs(x= " ", 
        y = "Total Cases", 
        title = "CY17 Case Volume by Location")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/barplot_group-1.png)
-
 ### Remove Legend
+Using ```fill``` adds a legend. To remove it, add the following:
+```{r barplot_no_legend}
 
-Using `fill` adds a legend. To remove it, add the following:
-
-``` r
 ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) + 
   geom_bar(stat="identity", alpha = .8) + 
   scale_y_continuous(labels=comma) + 
@@ -165,15 +134,13 @@ ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) +
        y = "Total Cases", 
        title = "CY17 Case Volume by Location") + 
   theme(legend.position = "none")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/barplot_no_legend-1.png)
-
 ### Custom colors
-
 To add your own colors, use the following:
+```{r barplot_custom_colors}
 
-``` r
 ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) + 
   geom_bar(stat="identity", alpha = .8) + 
   scale_y_continuous(labels=comma) + 
@@ -185,15 +152,13 @@ ggplot(loc, aes(x=reorder(location, count), y=count, fill = location)) +
   scale_fill_manual(values = c("dodgerblue", "darkgray", "pink", "Green", "orange"))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/barplot_custom_colors-1.png)
-
 ### Bar Plot Variations
 
 #### Stacked bar plot
 
-Let's now to a stacked bat plot of total case volume at each location by patient class. In this case I want to keep the legend. By default ggplot will use the column name as the legend name which is \``patient_class`. See the last layer of the code to rename the legend
+Let's now to a stacked bat plot of total case volume at each location by patient class. In this case I want to keep the legend. By default ggplot will use the column name as the legend name which is ```patient_class``. See the last layer of the code to rename the legend
+```{r stacked_barplot}
 
-``` r
 pat_class <- cases %>%
   group_by(location, patient_class) %>%
   summarise(count = n())
@@ -207,15 +172,15 @@ ggplot(pat_class, aes(x=reorder(location, count), y=count, fill = patient_class)
        y = "Total Cases", 
        title = "CY17 Case Volume by Location") + 
   guides(fill=guide_legend(title="Patient Class: ")) 
+  
 ```
-
-![](ggplot_tutorial_files/figure-markdown_github/stacked_barplot-1.png)
 
 #### Dodged Bar plot
 
-Next is a side-by-side, or "dodged", bar plot of comparing 3 services at each site: General Surgery, Otolaryngology, and Plastic Surgery. Adding `group = service` and `position = "dodge"` will accomplish this.
+Next is a side-by-side, or "dodged", bar plot of comparing 3 services at each site: General Surgery, Otolaryngology, and Plastic Surgery. Adding ```group = service``` and ```position = "dodge"``` will accomplish this.
 
-``` r
+```{r dodge_barplot}
+
 svc <- cases %>%
   filter(service %in% c("General Surgery", "Otolaryngology", "Plastic Surgery")) %>%
   group_by(location, service) %>%
@@ -229,15 +194,15 @@ ggplot(svc, aes(x=reorder(location, count), y=count, group = service, fill = ser
        y = "Total Cases", 
        title = "CY17 Case Volume by Location") + 
   guides(fill=guide_legend(title="Patient Class: "))
-```
 
-![](ggplot_tutorial_files/figure-markdown_github/dodge_barplot-1.png)
+```
 
 #### Filled Percentage Bar Plot
 
-It looks like ENT does the most cases, but what is the percentage breakdown of each service? Calculating a proportion and then using `position = "fill"` and adding a `geom_text` layer can tell us that.
+It looks like ENT does the most cases, but what is the percentage breakdown of each service? Calculating a proportion and then using ```position = "fill"``` and adding a ```geom_text``` layer can tell us that.
 
-``` r
+```{r pct_barplot}
+
 svc <- cases %>%
   filter(service %in% c("General Surgery", "Otolaryngology", "Plastic Surgery")) %>%
   group_by(location, service) %>%
@@ -254,15 +219,15 @@ ggplot(svc, aes(x=reorder(location, count), y=count, group = service, fill = ser
        title = "CY17 Case Volume by Location") + 
   guides(fill=guide_legend(title="Patient Class: ")) + 
   geom_text(aes(label= paste(prop*100, "%", sep="")), position = position_fill(vjust = .5))
-```
 
-![](ggplot_tutorial_files/figure-markdown_github/pct_barplot-1.png)
+```
 
 ### Facetted Bar Plot
 
 We can view monthly total case volumes separately for each location using faceting. This can be helpful because each location can be viewed alone, but in relation to the other locations since the scale of the y-axis is fixed. The main ORs really stand out in terms of monthly volume in relation to the ASCs.
 
-``` r
+```{r pct_barplot_facet}
+
 monthly <- cases %>%
   mutate(month_year = lubridate::floor_date(surgery_date, "month")) %>%
   group_by(month_year, location) %>%
@@ -278,13 +243,12 @@ ggplot(monthly, aes(x=month_year, y=count, fill = location)) +
   scale_x_date(breaks = scales::date_breaks("3 months"), date_labels = "%b %Y") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   facet_wrap(~location)
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/pct_barplot_facet-1.png)
+You can use ```scales = "free"``` in ```facet_wrap``` to allow each plot to re-size itself, but it makes comparisons harder.
+```{r pct_barplot_free}
 
-You can use `scales = "free"` in `facet_wrap` to allow each plot to re-size itself, but it makes comparisons harder.
-
-``` r
 ggplot(monthly, aes(x=month_year, y=count, fill = location)) + 
   geom_bar(stat='identity', alpha = .8) + 
   scale_y_continuous(labels=comma) + 
@@ -295,23 +259,19 @@ ggplot(monthly, aes(x=month_year, y=count, fill = location)) +
   scale_x_date(breaks = scales::date_breaks("3 months"), date_labels = "%b %Y") + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) + 
   facet_wrap(~location, scales = 'free')
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/pct_barplot_free-1.png)
+------------------
 
-------------------------------------------------------------------------
+# Line Plots
+Many of the Bar Plot examples can be made into line plots by changing ```geom_bar()``` to ```geom_line()```. One important distinction between bar plots and line plots using ggplot2 is that to specify colors in a line plot, use ```color = ...``` instead of ```fill = ... ```. 
 
-Line Plots
-==========
-
-Many of the Bar Plot examples can be made into line plots by changing `geom_bar()` to `geom_line()`. One important distinction between bar plots and line plots using ggplot2 is that to specify colors in a line plot, use `color = ...` instead of `fill = ...`.
-
-The Basics
-----------
+## The Basics
 
 Here is a line plot of monthly case volume at the Main ORs
+```{r lineplot}
 
-``` r
 #cases by location
 main_monthly <- cases %>%
   filter(location == 'PERIOP COMPLEX') %>%
@@ -321,31 +281,28 @@ main_monthly <- cases %>%
 
 ggplot(main_monthly, aes(x=month_year, y=count)) + 
   geom_line()
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/lineplot-1.png)
-
-Formatted Lineplot
-------------------
-
+## Formatted Lineplot
 let's format it a little but more by adding some color, points at each month and some labels. We can also add a smooth line to help show a trend.
 
-``` r
+```{r lineplot_formatted}
+
 ggplot(main_monthly, aes(x=month_year, y=count)) + 
   geom_line(size = 1.2, color = "dodgerblue") + 
   geom_point(size=2, color = "dodgerblue") +
   geom_smooth(se=F, method = 'loess', color = 'darkgray') + 
   scale_y_continuous(labels = comma) + 
   labs(x=" ", y = "Total Cases", title = "Total Monthly Case Volume", subtitle = "Periop Complex Only")
-```
 
-![](ggplot_tutorial_files/figure-markdown_github/lineplot_formatted-1.png)
+```
 
 ### Multi-Line Plot
 
-Let's look at all locations. Note we need to specify the `group()` and `color()` arguments in order to distinguish between locations
+Let's look at all locations. Note we need to specify the ```group()``` and ```color()``` arguments in order to distinguish between locations
+```{r multi_line_plot}
 
-``` r
 all_loc_monthly <- cases %>%
   mutate(month_year = floor_date(surgery_date, "month")) %>%
   group_by(location, month_year) %>%
@@ -357,15 +314,14 @@ ggplot(all_loc_monthly, aes(x=month_year, y=count, group = location, color = loc
   geom_smooth(se=F, method = "loess") + 
   scale_y_continuous(labels = comma) + 
   labs(x=" ", y = "Total Cases", title = "Total Monthly Case Volume")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/multi_line_plot-1.png)
-
 ### Reference Lines
+Let's add a reference line for the average monthly case volume for the Main Periop Complex Plot. First we need to add the overall mean to the dataframe and then in the plot statement, add a ```geom_hline()``` layer and an ```annotate()``` layer.
 
-Let's add a reference line for the average monthly case volume for the Main Periop Complex Plot. First we need to add the overall mean to the dataframe and then in the plot statement, add a `geom_hline()` layer and an `annotate()` layer.
+```{r reference_line}
 
-``` r
 main_monthly <- cases %>%
   filter(location == 'PERIOP COMPLEX') %>%
   mutate(month_year = floor_date(surgery_date, "month")) %>%
@@ -380,19 +336,17 @@ ggplot(main_monthly, aes(x=month_year, y=count)) +
   annotate("text", x = as.Date("2016-03-15"), y = 1500, label = paste("mean:\n", unique(main_monthly$avg_cases), "cases", sep=" ")) +
   scale_y_continuous(labels = comma) + 
   labs(x=" ", y = "Total Cases", title = "Total Monthly Case Volume", subtitle = "Periop Complex Only")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/reference_line-1.png)
+# Scatterplots
 
-Scatterplots
-============
+## The Basics
 
-The Basics
-----------
+Here is a scatterplot of daily procedure volume over time at the main ORs. 
 
-Here is a scatterplot of daily procedure volume over time at the main ORs.
+```{r scatterplot}
 
-``` r
 daily_main <- cases %>%
   filter(location == 'PERIOP COMPLEX') %>%
   mutate(day = floor_date(surgery_date, "day")) %>%
@@ -402,16 +356,15 @@ daily_main <- cases %>%
 ggplot(daily_main, aes(x=day, y=count)) + 
   geom_point() + 
   labs(x=" ", y="Total Cases", title = "Daily Case Volume", subtitle = "Periop Complex Only")
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/scatterplot-1.png)
-
-Coloring a Scatterplot
-----------------------
+## Coloring a Scatterplot
 
 The plot revealed something interesting - there seems to be 2 groups in the data. We can use colors to explore the data some more.
 
-``` r
+```{r color_scatterplot}
+
 daily_main <- cases %>%
   filter(location == 'PERIOP COMPLEX') %>%
   mutate(day = floor_date(surgery_date, "day"),
@@ -424,76 +377,79 @@ ggplot(daily_main, aes(x=day, y=count, color = day_nm)) +
   labs(x=" ", y="Total Cases", title = "Daily Case Volume", subtitle = "Periop Complex Only") + 
   guides(color=guide_legend(title="Day of Week")) + 
   theme(legend.position = "bottom")
+  
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/color_scatterplot-1.png)
 
-Boxplots
-========
+#Boxplots
+##The basics
+Also known as 'box-and-whisker' charts, boxplots are a great way to show the distribution of your data and to compare distributions between groups. To read a boxplot, each section of the plot represents 25% of the data. The line to the left side is lowest 25th percetile, the beginning of the box is the next 25th percentile with the middle vertical line representing the 50th percentile (median). The end of the box is the 75th percentile and the end of the line is the 100th percentile or close to it. Any outliers are represented as dots. 
 
-The basics
-----------
+A boxplot that has equal sections represent **normally distributed** observations
+```{r normal_dist, echo = F, fig.height = 1}
+    ggplot() +
+        geom_boxplot(aes(x = "normal", y = 0:100)) +
+    coord_flip() +
+    labs(x = "", y = "")
+```
 
-Also known as 'box-and-whisker' charts, boxplots are a great way to show the distribution of your data and to compare distributions between groups. To read a boxplot, each section of the plot represents 25% of the data. The line to the left side is lowest 25th percetile, the beginning of the box is the next 25th percentile with the middle vertical line representing the 50th percentile (median). The end of the box is the 75th percentile and the end of the line is the 100th percentile or close to it. Any outliers are represented as dots.
+Box plots that have squished sections represent **skewed** or concentrated values 
+```{r skewed_dist, echo = F, fig.height = 1}
+    ggplot() +
+#        geom_boxplot(aes(x = "normal", y = 0:1)) +
+        geom_boxplot(aes(x = " skewed", 
+                         y = c(seq(.01, .05, length.out = 25), 
+                               seq(.05, .10, length.out = 25), 
+                               seq(.10, .50, length.out = 25), 
+                               seq(.50, 1.00, length.out = 25)))) +
+    coord_flip() +
+    labs(y = "", x = "")
+```
 
-A boxplot that has equal sections represent **normally distributed** observations ![](ggplot_tutorial_files/figure-markdown_github/normal_dist-1.png)
-
-Box plots that have squished sections represent **skewed** or concentrated values ![](ggplot_tutorial_files/figure-markdown_github/skewed_dist-1.png)
-
-Here is an example of the time it takes to complete a procedure. Note that the medians (middle lines) vary based on the different patient classes.
-
-``` r
+Here is an example of the time it takes to complete a procedure. Note that the medians (middle lines) vary based on the different patient classes.  
+```{r boxplot_vert}
     ggplot(cases) +
         geom_boxplot(aes(x = patient_class, y = intraop_time))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_vert-1.png)
-
-Horizontal layout
------------------
-
-The first thing that you need to know is that your **categorical variables need to be on the X-axis.** You may (often) want to flip your boxplot horizontally to accomodate longer descriptions. If you try to switch `x` and `y`, you might get something that looks like this.
-
-``` r
+##Horizontal layout
+The first thing that you need to know is that your **categorical variables need to be on the X-axis.** You may (often) want to flip your boxplot horizontally to accomodate longer descriptions. If you try to switch `x` and `y`, you might get something that looks like this. 
+```{r boxplot_horiz}
     ggplot(cases) +
         geom_boxplot(aes(x = intraop_time, y = patient_class))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_horiz-1.png)
 
 If you want the chart to display horizontally, you will need to add **`+ coord_flip()`** to plot it horizontally.
-
-``` r
+```{r boxplot_flip}
     ggplot(cases) +
         geom_boxplot(aes(x = patient_class, y = intraop_time)) +
         coord_flip()
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_flip-1.png)
-
-Formatting
-----------
-
+##Formatting
 `geom_boxplot()` takes a variety of parameters both inside and outside of the `aes()`. `aes()` is always data driven. These are the aesthetics that are defined by values of your dataset. Arguments outside of `aes()` will be applied globally to the chart. For example, to make all charts have a consistent feature like a blue outline on each boxplot, you would write something like `geom_boxplot(aes(x = _ , y = _ ), color = "blue")` To make the charts have different outline colors based on some difference in the data, you would use something like `geom_boxplot(aes(x = _ , y = _ , color = class))`. Boxplots also have `outlier.____` arguments to change the appearance of outliers.
 
 Below are the most common parameters you might change about a boxplot.
 
--   `color` = the outline of the boxplot
--   `fill` = the color of rectangles in the boxplot
--   `size` = line thickness/border of all boxplots
--   `varwidth` = width is dependent on group size (N)
+* `color` = the outline of the boxplot
+* `fill` = the color of rectangles in the boxplot
+* `size` = line thickness/border of all boxplots
+* `varwidth` = width is dependent on group size (N)
 
 for outliers: note - these follow the rules for points
 
--   `outlier.color` = if `NULL`, will default to match color in aes()
--   `outlier.size`
--   `outlier.alpha` = transparency (0-1)
--   `outlier.shape` = you can give a single character or use the values [shown here](https://ggplot2.tidyverse.org/reference/scale_shape.html)
-    -   if shape takes a fill aesthetic
-    -   `outlier.fill` = if null, will default to match fill in aes()
-    -   `outlier.stroke` = outline thickness, color will be outlier.color
+* `outlier.color` = if `NULL`, will default to match color in aes()
+* `outlier.size`
+* `outlier.alpha` = transparency (0-1)
+* `outlier.shape` = you can give a single character or use the values [shown here](https://ggplot2.tidyverse.org/reference/scale_shape.html) 
+    + if shape takes a fill aesthetic
+    + `outlier.fill` = if null, will default to match fill in aes()
+    + `outlier.stroke` = outline thickness, color will be outlier.color
 
-``` r
+
+```{r}
     ggplot(cases) +
         geom_boxplot(aes(x = patient_class, 
                          y = intraop_time,
@@ -506,41 +462,30 @@ for outliers: note - these follow the rules for points
         coord_flip()
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-1-1.png)
-
-Handling outliers
------------------
-
+##Handling outliers
 in general, you can adjust how "zoomed in" ggplots are by adjusting either `+ ylim(0, 400)` or `+ scale_y_continuous(limits = c(0, 400))`, however, this method is not advised for boxplots. Doing so will remove data points outside of your limits and re-calculate the quartiles. For boxplots you want to use either `+ coord_cartesian()` and specify the `ylim = c(start, end)` argument. You can also use `coord_flip` and specify the `ylim` argument as it inherently uses cartesian coordinates. Note below that I have used `coord_flip(ylim = c(0, 400))`. Remember, even though you have changed how `x` and `y` look, you need to refer to them as their original designations.
 
-``` r
+```{r boxplot_outliers, fig.height = 4}
     ggplot(cases) +
         geom_boxplot(aes(x = patient_class, y = intraop_time), outlier.alpha = .1) +
         coord_flip(ylim = c(0, 400))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_outliers-1.png)
-
-Plotting everything (no comparison)
------------------------------------
-
+##Plotting everything (no comparison)
 If you want to know what the distribution of your data without breaking it up by a categorical variable, you still need to give it an X value You can write something like `x = "All"` as seen below
 
-``` r
+```{r boxplot_everything, fig.height = 1}
     ggplot(cases) +
         geom_boxplot(aes(x = "All", y = intraop_time)) +
         coord_flip(ylim = c(0, 400)) +
         labs(x = "")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_everything-1.png)
 
-Aggregated data
----------------
-
+##Aggregated data
 Sometimes the data you have is already aggregated and you know each of the quartiles' y values. In this case you can use `stat = "identity"`.
 
-``` r
+```{r manual_boxplot_df}
     df <-
         cases %>%
         filter(!is.na(intraop_time)) %>% 
@@ -555,14 +500,11 @@ Sometimes the data you have is already aggregated and you know each of the quart
         ungroup()
 ```
 
-| patient\_class |   y0|    y25|    y50|       mean|    y75|  y100|      N|
-|:---------------|----:|------:|------:|----------:|------:|-----:|------:|
-| Day Surgery    |    5|  20.00|   43.0|   59.49917|   77.0|   617|  34750|
-| Inpatient      |   11|  74.00|  116.0|  156.60375|  200.0|   985|  12038|
-| Observation    |   10|  55.00|   78.0|  106.20559|  133.0|   702|   5686|
-| Outpatient     |   13|  22.25|   39.5|   48.51786|   57.5|   184|     56|
+```{r manual_boxplot_table, echo = F}
+head(df)
+```
 
-``` r
+```{r manual_boxplot}
     p1 <-
         ggplot(df, aes(x = reorder(patient_class, mean))) +
         coord_flip() +
@@ -579,23 +521,16 @@ Sometimes the data you have is already aggregated and you know each of the quart
     p1
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/manual_boxplot-1.png)
-
 Unfortunately, `stat = "identity"` doesn't show outliers separate from the quartile breaks. It also doesn't take a `varwidth` argument. One way to add in the group size is to use `geom_text()` and give y a specific value (ex. `y = 0`). Here, I am finding the minimum `y0` value and then subtracting 5 in order to arrange the values in a straight line and ensure that the values will not overlap elements of my chart.
 
-``` r
+```{r boxplot_text_N}
     p1 +
         geom_text(aes(x = patient_class, y = min(y0)-5, label = N))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/boxplot_text_N-1.png)
-
-Violin Plots
-------------
-
+##Violin Plots
 a nice complement for a boxplot is to use `geom_violin()` these show a frequency density and are similar to `geom_histogram` (below)
-
-``` r
+```{r geom_violin}
     cases %>% 
     filter(year(surgery_date) == 2016) %>% 
     ggplot() +
@@ -613,14 +548,10 @@ a nice complement for a boxplot is to use `geom_violin()` these show a frequency
         theme_classic()
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/geom_violin-1.png)
 
-Reference lines
-===============
-
+#Reference lines
 It can help your audience to add reference lines to your chart. Even though we are using `coord_flip()`, you will need to think of it in its non-flipped form. To add reference lines you will need to use `geom_hline()` and a `yintercept`
-
-``` r
+```{r ref_lines}
     ggplot(cases) +
         geom_hline(aes(yintercept = mean(intraop_time)), color = "blue", linetype = "dashed", size = 1) +
         geom_hline(aes(yintercept = median(intraop_time)), color = "red", linetype = "dotted", size = 1.2) +
@@ -632,33 +563,31 @@ It can help your audience to add reference lines to your chart. Even though we a
         theme_classic()
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/ref_lines-1.png)
+###hline & vline
+horizontal and veritcal reference lines can be added using `geom_vline` or `geom_hline`. These lines take a vector or numeric value for the respective x- or y-intercept. These lines have take the same parameters as other line elements: `linetype`, `size`, `color`, `alpha`. 
 
-### hline & vline
-
-horizontal and veritcal reference lines can be added using `geom_vline` or `geom_hline`. These lines take a vector or numeric value for the respective x- or y-intercept. These lines have take the same parameters as other line elements: `linetype`, `size`, `color`, `alpha`.
-
-`linetype` can be either a text value (ex `linetype = "dotted"`) or an integer (`linetype = 1`). Here is the full list: \* 1 = 'solid' \* 2 = 'dashed' \* 3 = 'dotted' \* 4 = "dotdash" \* 5 = "longdash" \* 6 = "twodash"
-
-``` r
+`linetype` can be either a text value (ex `linetype = "dotted"`) or an integer (`linetype = 1`). Here is the full list:
+* 1 = 'solid'
+* 2 = 'dashed'
+* 3 = 'dotted'
+* 4 = "dotdash"
+* 5 = "longdash"
+* 6 = "twodash"
+```{r}
     ggplot() +
         ggtitle("horizontal line = geom_hline, vertical = geom_vline") +
         geom_hline(yintercept = 3) +
         geom_vline(xintercept = c(1:6), size = 1, color = "blue", linetype = 1:6) +
         labs(x = "linetype")
+    
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-2-1.png)
 
-Histograms
-==========
-
+#Histograms
 Histograms are another great way to view the **frequency of values** in your data. Hisograms only take a continuous/numeric value on the x-axis; the y-axis is automatically generated based on the number of `bins` used. `bins` are essentially equal intervals within the data. You can also specify `binwidth` if there is a certain interval with with you want to cut your data
 
-Adjusting \# of bins
---------------------
-
-``` r
+##Adjusting # of bins
+```{r hist_bins, fig.height = 3}
 plot_margin <- ggplot()+theme_void()
 
 p_bin_30 <-
@@ -675,12 +604,8 @@ grid.arrange(p_bin_30, plot_margin, p_bin_10,
              widths = c(0.4, 0.2, 0.4), nrow = 1)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/hist_bins-1.png)
-
-Adjusting bin intervals
------------------------
-
-``` r
+##Adjusting bin intervals
+```{r hist_binwidth, fig.height = 3}
 p_bw_01 <-
     ggplot(cases) +
         ggtitle("binwidth = 100") +
@@ -695,45 +620,34 @@ grid.arrange(p_bw_01, plot_margin, p_bw_02,
              widths = c(0.4, 0.2, 0.4), nrow = 1)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/hist_binwidth-1.png)
-
-Facet layouts
-=============
-
+#Facet layouts
 A nice way to show difference between groups is to separate them spatially.
-
-``` r
+```{r fg_hist}
     ggplot(cases) +
         geom_histogram(aes(x = intraop_time, fill = patient_class), 
                        binwidth = 100, color = "white") +
         facet_grid(patient_class ~ .)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/fg_hist-1.png)
-
 Facets are known in other tools as trellis charts or small multiples.
 
-There are two types, generalized below: \* `facet_grid()` = one column by another column \* `facet_wrap()` = single column
+There are two types, generalized below:
+* `facet_grid()` = one column by another column
+* `facet_wrap()` = single column
 
-facet\_grid: one column by another column
------------------------------------------
-
-`facet_grid` is perhaps the easier of the two to understand. To use this grid feature, you pass **two categorical variables** as your 'row' and 'column' values. These are separated by a tilda (`~`) and written like this: `facet_grid(row~column)`.
-
-``` r
+##facet_grid: one column by another column
+`facet_grid` is perhaps the easier of the two to understand. To use this grid feature, you pass **two categorical variables** as your 'row' and 'column' values. These are separated by a tilda (`~`) and written like this:
+`facet_grid(row~column)`. 
+```{r fg_example, fig.height = 4}
     ggplot(cases) +
         geom_bar(aes(month_surgery)) +
         facet_grid(year_surgery~am_pm) +
         labs(title = "Case Volume time by time of day")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/fg_example-1.png)
-
-### Only 1 split and using the period `.`
-
+###Only 1 split and using the period `.`
 If you want separation in **columns** but not rows, you will use a `.` `facet_grid(var~.)`. If you want separation in **rows** but not columns, you will use `facet_grid(~var)`. Note that the `.` is optional when it is to the left (`(.~var)` or `(~var)` are both accepted) but it is mandatory when no variable is specified on the right `(var~.)`.
-
-``` r
+```{r fig.height=3}
 p_col <-
     ggplot(cases) +
     ggtitle("facet_grid(.~year_surgery)") +
@@ -747,24 +661,17 @@ p_row <-
     grid.arrange(p_col, plot_margin, p_row, widths = c(0.4, 0.2, 0.4))
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
-### labeller
-
+###labeller
 The default text displayed in the header (`strip.text`) shows only a value, for example `1999` for the year. Adding `labeller = label_both` will add the variable name to the facetted values and will display as `Year: 1999`
-
-``` r
+```{r}
     ggplot(cases) +
         facet_grid(year_surgery~patient_class, labeller = label_both)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-4-1.png)
-
-### switch
-
+###switch
 `switch` will swap the placement of the facet headers
-
-``` r
+```{r fig.height = 3}
     p_base <- 
         ggplot(cases)
 
@@ -791,25 +698,18 @@ The default text displayed in the header (`strip.text`) shows only a value, for 
      grid.arrange(p_default, p_both, p_y, p_x, nrow = 1)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-facet\_wrap: one column repeating in a grid
--------------------------------------------
-
+##facet_wrap: one column repeating in a grid
 `facet_wrap()` is different from `facet_grid()` in that it will wrap one variable into multiple columns and rows
-
-``` r
+```{r facet_default}    
     ggplot(cases) +
         facet_wrap(~location, nrow = 2) +
         #geom_count(aes(cty, hwy, color = manufacturer), alpha = 0.8) +
         theme(legend.position="none")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/facet_default-1.png)
-
 Notice the difference between `facet_grid(.~manufacturer)` and `facet_wrap(~manufacturer)`
-
-``` r
+```{r facet_diff, fig.height = 3}
 p_grid <-
     ggplot(cases) +
         #geom_count(aes(cty, hwy), alpha = 0.5) +
@@ -832,13 +732,11 @@ p_grid <-
              widths = c(0.45, 0.1, 0.45), nrow = 1)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/facet_diff-1.png)
 
-### Specifying rows and column parameters
-
+###Specifying rows and column parameters
 `facet_wrap` also allows specification for the number of rows with `nrow =` or number of columns with `ncol =`.
 
-``` r
+```{r nrow_ncol}
 p_nrow <-
     ggplot(cases) +
         ggtitle("nrow = 2") +
@@ -857,22 +755,19 @@ p_ncol <-
     
 grid.arrange(p_nrow, plot_margin, p_ncol, 
              widths = c(0.45, 0.1, 0.45), nrow = 1)
+
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/nrow_ncol-1.png)
-
-Advanced tips
--------------
-
+##Advanced tips
 There are additional parameters that are applicable to both `facet_wrap()` and `facet_grid()`
 
-### scales & space
+###scales & space
+`scales` will adjust the axis range across panels
+`scales = "free_y"` will vary the y axis, `scales = "free_x"` will vary the x-axis and `scales = "free"` will vary both.
 
-`scales` will adjust the axis range across panels `scales = "free_y"` will vary the y axis, `scales = "free_x"` will vary the x-axis and `scales = "free"` will vary both.
+A related parameter is `space` and takes the same values as `scales`. When `space = ` is used, discrete variables with no observations will be dropped and the facet will expand/contract to match the # of variables
 
-A related parameter is `space` and takes the same values as `scales`. When `space =` is used, discrete variables with no observations will be dropped and the facet will expand/contract to match the \# of variables
-
-``` r
+```{r scale_space, fig.height = 4}
 cases_peak_times <-
     cases %>% 
     filter(between(hour_surgery, 7, 13),
@@ -903,23 +798,18 @@ p_space <-
              widths = c(0.45, 0.1, 0.45), nrow = 1)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/scale_space-1.png)
 
-### layers within facets
-
-you can also layer your facets by using plus signs `+`. Notice this syntax: `(~drv+year, ...)`
-
-``` r
+###layers within facets
+you can also layer your facets by using plus signs `+`. Notice this syntax:
+`(~drv+year, ...)`
+```{r layer}
     ggplot(cases_peak_times) +
             geom_histogram(aes(intraop_time), color = "white", bins = 10) +
             facet_wrap(~am_pm+patient_class, ncol = 3) 
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/layer-1.png)
-
-To bring us back to histograms, the [geom\_histogram tutorial](http://ggplot2.tidyverse.org/reference/geom_histogram.html#examples) gives advice (at the bottom) for faceting histograms with varying binwidths
-
-``` r
+To bring us back to histograms, the [geom_histogram tutorial](http://ggplot2.tidyverse.org/reference/geom_histogram.html#examples) gives advice (at the bottom) for faceting histograms with varying binwidths
+```{r dynamic_hist}
 mtlong <-
     mtcars %>% 
     gather(variable, value)
@@ -933,14 +823,10 @@ ggplot(mtlong) +
     guides(fill = F)
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/dynamic_hist-1.png)
 
-Plotting dates
-==============
-
+#Plotting dates
 When working with dates, the values should be treated as continuous variables and will need to have one of the following classes `Date`, `POSIXct`, `POSIXct` or be broken into components with commands like `month(x)`, `year(x)`, `wday(x)`. The `lubridate` library provides many easy funtions for working with and converting dates
-
-``` r
+```{r dates_df}
 cases_dates <-
     cases %>% 
     mutate(N = 1,
@@ -955,14 +841,13 @@ cases_dates <-
            week = week(surgery_date))
 ```
 
-Angled text
------------
+##Angled text
+Use this to change the angle of the x axis labels
+`theme(axis.text.x = element_text(angle = 75, hjust = 1)`
 
-Use this to change the angle of the x axis labels `theme(axis.text.x = element_text(angle = 75, hjust = 1)`
-
-The following line will remove the bold title of the x axis `axis.title.x = element_blank()`
-
-``` r
+The following line will remove the bold title of the x axis
+`axis.title.x = element_blank()`
+```{r}
 ggplot(cases_dates, aes(x = month_start, 
                   fill = quarter_text)) +
     ggtitle("Angled month-year") +
@@ -973,12 +858,8 @@ ggplot(cases_dates, aes(x = month_start,
           axis.title.x = element_blank())
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-6-1.png)
-
-quarters
---------
-
-``` r
+##quarters
+```{r}
     ggplot(cases_dates) +
         ggtitle("Quarterly breaks") +
         geom_bar(aes(quarter_start, fill = quarter_text), width = 85) +
@@ -988,14 +869,9 @@ quarters
               legend.position = "none")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-7-1.png)
-
-some other approaches
----------------------
-
-### facets
-
-``` r
+##some other approaches
+###facets
+```{r}
     ggplot(cases_dates, aes(month, fill = quarter_text)) +
         ggtitle("Months as integers") +
         geom_bar() +
@@ -1005,9 +881,7 @@ some other approaches
         theme(legend.position = "none")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-8-1.png)
-
-``` r
+```{r}
     ggplot(cases_dates, aes(month_start, fill = factor(year))) +
         ggtitle("Month names by year") +
         geom_bar() +
@@ -1019,11 +893,8 @@ some other approaches
               legend.position = "none")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-9-1.png)
-
-### year-over-year comparisons
-
-``` r
+###year-over-year comparisons
+```{r}
 dates_df_agg <-
     cases_dates %>% 
     group_by(week, year = factor(year)) %>% 
@@ -1042,45 +913,39 @@ dates_df_agg <-
         theme(legend.position = "none")
 ```
 
-![](ggplot_tutorial_files/figure-markdown_github/unnamed-chunk-10-1.png)
-
-date formats
-------------
-
+##date formats
 The specifier string may contain the following directives:
 
--   `%B` - full month name
--   `%b` - abbreviated month name
--   `%m` - month as a padded integer \[01,12\]
+* `%B` - full month name
+* `%b` - abbreviated month name
+* `%m` - month as a padded integer [01,12]
 
--   `%d` - day of the month as a padded integer \[01,31\]
--   `%e` - day of the month as an integer \[1,31\]
+* `%d` - day of the month as a padded integer [01,31]
+* `%e` - day of the month as an integer [1,31]
 
--   `%A` - full weekday name
--   `%a` - abbreviated weekday name
+* `%A` - full weekday name
+* `%a` - abbreviated weekday name
 
--   `%y` - year without century as a padded integer \[00,99\]
--   `%Y` - year with century as an integer \[2000, 1999\]
+* `%y` - year without century as a padded integer [00,99]
+* `%Y` - year with century as an integer [2000, 1999]
 
--   `%j` - day of the year as a padded integer \[001,366\]
+* `%j` - day of the year as a padded integer [001,366]
 
--   `%H` - hour (24-hour clock) as a padded integer \[00,23\]
--   `%I` - hour (12-hour clock) as a padded integer \[01,12\]
+* `%H` - hour (24-hour clock) as a padded integer [00,23]
+* `%I` - hour (12-hour clock) as a padded integer [01,12]
 
--   `%M` - minute as a padded integer \[00,59\]
--   `%p` - either AM or PM
+* `%M` - minute as a padded integer [00,59]
+* `%p` - either AM or PM
 
--   `%%` - a literal percent sign (`%`)
+* `%%` - a literal percent sign (`%`)
 
-Nice HTML Tables
-================
+#Nice HTML Tables
 
-Basic Tables
-------------
+##Basic Tables
 
 We can make basic tables using the `kable` package.
+```{r, basic_table}
 
-``` r
 cases %>%
   dplyr::group_by(location) %>%
   dplyr::summarise(count = n()) %>%
@@ -1088,22 +953,15 @@ cases %>%
   dplyr::rename("Location" = location,
                 'Count of Cases' = count) %>%
   knitr::kable()
+                    
 ```
 
-| Location          |  Count of Cases|
-|:------------------|---------------:|
-| PERIOP COMPLEX    |           36792|
-| VOORHEES          |            5596|
-| KING OF PRUSSIA   |            4128|
-| BUCKS             |            3389|
-| BRANDYWINE VALLEY |            2628|
+##Advanced Tables
 
-Advanced Tables
----------------
+We can make some more advanced tables using  the `kableExtra` and `formattable` packages, whch work really nicely with `kable` and `dplyr`. The table below is a basic table of counts of cases at each location, with cell shading depending on the number of cases:
 
-We can make some more advanced tables using the `kableExtra` and `formattable` packages, whch work really nicely with `kable` and `dplyr`. The table below is a basic table of counts of cases at each location, with cell shading depending on the number of cases:
-
-``` r
+```{r, advanced_table}
+ 
 cases %>%
   group_by(location) %>%
   summarise(count = n()) %>%
@@ -1113,59 +971,6 @@ cases %>%
   knitr::kable("html", escape = F) %>%
   kableExtra::kable_styling(bootstrap_options = c("hover", "condensed", "responsive"), 
                         full_width = F)
+                    
 ```
-
-<table class="table table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-Location
-</th>
-<th style="text-align:left;">
-count
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-PERIOP COMPLEX
-</td>
-<td style="text-align:left;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #ffa500">36792</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-VOORHEES
-</td>
-<td style="text-align:left;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #fff7e8">5596</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-KING OF PRUSSIA
-</td>
-<td style="text-align:left;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #fffbf3">4128</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-BUCKS
-</td>
-<td style="text-align:left;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #fffcf9">3389</span>
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-BRANDYWINE VALLEY
-</td>
-<td style="text-align:left;">
-<span style="display: block; padding: 0 4px; border-radius: 4px; background-color: #ffffff">2628</span>
-</td>
-</tr>
-</tbody>
-</table>
+  
