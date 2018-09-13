@@ -1,17 +1,9 @@
 ---
 title: "ggplot2 Tutorial"
 output:
-    md_document:
+  md_document:
     variant: markdown_github
     toc: true
-    df_print: kable
-    code_folding: show
-    toc_depth: 4
-    toc_float:
-      collapsed: true
-      smooth_scroll: false
-editor_options:
-  chunk_output_type: console
 ---
 
 <style type="text/css">
