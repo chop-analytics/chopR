@@ -11,4 +11,6 @@ This folder contains ggplot and highcharter guides along with a flexdashboard te
 
 This folder contains PDF files of the in-person sessions that all OCQI analysts complete during their R portion of onboarding. The files cover the following topics: CHOP Analytics R Standards, dplyr, lubridate, tidyr, and ggplot. These sessions contain lecture-formatted instructions, examples, and also practice exercises using a dummy dataset. 
 
-## CHOP 
+## Standards
+
+This folder contains documentation related to CHOP Analytics R Standards that all analysts are recommended to adhere to in order to allow for ffective and efficient code review, project handoff, and project sustainment. The standards cover the following topics: querying philosophy, organization, code structure, and code style for projects using R scripts and R markdowns.
