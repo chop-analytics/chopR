@@ -22,7 +22,7 @@ There are a few things to note about these guide/templates:
 
 ## Instructional Sessions
 
-This folder contains PDF files of the in-person sessions that all OCQI analysts complete during their R portion of onboarding. The files cover the following topics: CHOP Analytics R Standards, dplyr, lubridate, tidyr, and ggplot. These sessions contain lecture-formatted instructions, examples, and also practice exercises using a dummy dataset. 
+This folder contains PDF files of the in-person sessions that all new OCQI analysts completed during their R portion of onboarding and all current OCQI analysts completed during the two-day training. The files cover the following topics: CHOP Analytics R Standards, dplyr, lubridate, tidyr, and ggplot. These sessions contain lecture-formatted instructions, examples, and also practice exercises using a dummy dataset. Additionally, there is also a Welcome Packet within this folder that outlines the training schedule, practice exercises, and R package cheat sheets relevant to the sessions. Although the internal `rocqi` package was taught to OCQI analysts during this training, these material are not included in this public repo because the package is not publicly available. 
 
 ## Standards
 
