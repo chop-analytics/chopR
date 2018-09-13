@@ -1,74 +1,17 @@
--   [Introduction](#introduction)
--   [Barplots](#barplots)
-    -   [The Basics](#the-basics)
-    -   [Formatted Barplot](#formatted-barplot)
-        -   [Fill Option](#fill-option)
-        -   [Remove Legend](#remove-legend)
-        -   [Custom colors](#custom-colors)
-        -   [Bar Plot Variations](#bar-plot-variations)
-            -   [Stacked bar plot](#stacked-bar-plot)
-            -   [Dodged Bar plot](#dodged-bar-plot)
-            -   [Filled Percentage Bar Plot](#filled-percentage-bar-plot)
-        -   [Facetted Bar Plot](#facetted-bar-plot)
--   [Line Plots](#line-plots)
-    -   [The Basics](#the-basics-1)
-    -   [Formatted Lineplot](#formatted-lineplot)
-        -   [Multi-Line Plot](#multi-line-plot)
-        -   [Reference Lines](#reference-lines)
--   [Scatterplots](#scatterplots)
-    -   [The Basics](#the-basics-2)
-    -   [Coloring a Scatterplot](#coloring-a-scatterplot)
--   [Boxplots](#boxplots)
-    -   [The basics](#the-basics-3)
-    -   [Horizontal layout](#horizontal-layout)
-    -   [Formatting](#formatting)
-    -   [Handling outliers](#handling-outliers)
-    -   [Plotting everything (no comparison)](#plotting-everything-no-comparison)
-    -   [Aggregated data](#aggregated-data)
-    -   [Violin Plots](#violin-plots)
--   [Reference lines](#reference-lines-1)
-    -   [hline & vline](#hline-vline)
--   [Histograms](#histograms)
-    -   [Adjusting \# of bins](#adjusting-of-bins)
-    -   [Adjusting bin intervals](#adjusting-bin-intervals)
--   [Facet layouts](#facet-layouts)
-    -   [facet\_grid: one column by another column](#facet_grid-one-column-by-another-column)
-        -   [Only 1 split and using the period `.`](#only-1-split-and-using-the-period-.)
-        -   [labeller](#labeller)
-        -   [switch](#switch)
-    -   [facet\_wrap: one column repeating in a grid](#facet_wrap-one-column-repeating-in-a-grid)
-        -   [Specifying rows and column parameters](#specifying-rows-and-column-parameters)
-    -   [Advanced tips](#advanced-tips)
-        -   [scales & space](#scales-space)
-        -   [layers within facets](#layers-within-facets)
--   [Plotting dates](#plotting-dates)
-    -   [Angled text](#angled-text)
-    -   [quarters](#quarters)
-    -   [some other approaches](#some-other-approaches)
-        -   [facets](#facets)
-        -   [year-over-year comparisons](#year-over-year-comparisons)
-    -   [date formats](#date-formats)
--   [Nice HTML Tables](#nice-html-tables)
-    -   [Basic Tables](#basic-tables)
-    -   [Advanced Tables](#advanced-tables)
-
-<style type="text/css">
-
-    body{ /* Normal  */
-          font-size: 14px;
-      }
-
- </style>
-<script>
-    $(document).ready(function() {
-      $items = $('div#TOC li');
-      $items.each(function(idx) {
-        num_ul = $(this).parentsUntil('#TOC').length;
-        $(this).css({'text-indent': num_ul * 10, 'padding-left': 0});
-      });
-    
-    });
-</script>
+<!-- <style type="text/css"> -->
+<!--     body{ /* Normal  */ -->
+<!--           font-size: 14px; -->
+<!--       } -->
+<!--  </style> -->
+<!-- <script> -->
+<!--     $(document).ready(function() { -->
+<!--       $items = $('div#TOC li'); -->
+<!--       $items.each(function(idx) { -->
+<!--         num_ul = $(this).parentsUntil('#TOC').length; -->
+<!--         $(this).css({'text-indent': num_ul * 10, 'padding-left': 0}); -->
+<!--       }); -->
+<!--     }); -->
+<!-- </script> -->
 Introduction
 ============
 
