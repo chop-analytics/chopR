@@ -58,11 +58,17 @@ Matt Dye ; dyem1@email.chop.edu
 ### Team Members
 
 Ashley Oliver
+
 Brendan Graham
+
 Emily Foster
+
 Jake Riley
+
 Joe Mirizio
+
 Paul Wildenhaim
+
 Siying Wang
 
 
