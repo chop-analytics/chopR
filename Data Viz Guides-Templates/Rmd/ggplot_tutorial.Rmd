@@ -961,7 +961,7 @@ cases %>%
 We can make some more advanced tables using  the `kableExtra` and `formattable` packages, whch work really nicely with `kable` and `dplyr`. The table below is a basic table of counts of cases at each location, with cell shading depending on the number of cases:
 
 ```{r, advanced_table}
-
+ 
 cases %>%
   group_by(location) %>%
   summarise(count = n()) %>%
