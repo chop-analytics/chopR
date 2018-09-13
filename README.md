@@ -17,6 +17,7 @@ There are a few things to note about these guide/templates:
    * The guide contains information on how to connect to the CHOP Data Warehouse, which is essential for pulling data into the dashboard. This step could be replaced by non-CHOP users if they have a different mechanism for pulling data into R Studio. 
    
    * The guide is also dependent on an internal R package developed by OCQI called `rocqi`, which currently is only available to CHOP employees. If you are a CHOP employee that wishes to download this package, please see this repo for documentation: https://github.research.chop.edu/CQI/rocqi. 
+   
    Regardless of these limitation, the guide can be used as a conceptual framework for CHOP and non-CHOP users to build an interactive flexdashboard. 
 
 ## Instructional Sessions
