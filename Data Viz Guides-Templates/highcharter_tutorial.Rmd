@@ -1,0 +1,305 @@
+---
+title: "highcharter Tutorial"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    toc: yes
+editor_options:
+  chunk_output_type: console
+---
+
+```{r, echo=F, include=F}
+library(highcharter)
+#install.packages('viridis')
+library(dplyr)
+library(tidyr)
+library(ggthemes)
+library(lubridate)
+library(scales)
+library(data.table)
+library(DBI)
+library(RODBCDBI)
+library(DT)
+library(Iso)
+library(odbc)
+library(readr)
+library(viridis)
+library(zoo)
+library(xts)
+library(rocqi)
+library(RCurl)
+
+#con <- dbConnect(RODBCDBI::ODBC(), dsn='CDWPRD', believeNRows = FALSE)
+
+```
+
+```{r load_data, echo=F, include=F}
+
+#load data
+#cases <- read.csv(file = "Q:/07_Dedicated_Areas/Periop/Misc/highcharter_demo_data.csv")
+#cases <- read.csv(file = "H:/GitHub/misc_ocqi/highcharter_tutorial/highcharter_demo_data.csv")
+path <- getURL("https://raw.githubusercontent.com/chop-analytics/chopR/develop/Data%20Viz%20Guides-Templates/Rmd/Data/highcharter_demo_data.csv")
+cases <- read_csv(path)
+
+#format data
+names(cases) <- tolower(names(cases))
+cases$surgery.date <- lubridate::mdy(cases$`surgery date`)
+cases$year <- lubridate::year(cases$surgery.date)
+cases$month <- lubridate::month(cases$surgery.date, label = T, abbr = T)
+cases$month2 <- lubridate::month(cases$surgery.date)
+cases$year_mon <- zoo::as.yearmon(cases$surgery.date)
+cases$date.fake <- lubridate::ymd(paste(cases$year, cases$month2, "01", sep="-"))
+
+#select columns
+cases <- cases %>% 
+  dplyr::select(year, month, year_mon, date.fake, surgery.date,location, service)
+
+```
+
+
+**Highcharter** is a package you can use to create modern interactive visualizations in R. It is an adaptation of the **Highcharts** plotting software, a JavaScript plotting package. This notebook will introduce Highcharter code syntax and the common types of plots. Similar to ggplot2, highcharter charts are built using layers, and the syntax will look familiar to anyone with knowledge of dplyr - chart layers are added using the *%>%* pipe.
+
+To use this tutorial, copy [this script](https://github.research.chop.edu/raw/grahamb4/misc_ocqi/master/highcharter_tutorial/highcharter_std_code.Rmd?token=AAAAwGJa5JblVH5uBrip-xazzQXJGVIZks5aezIQwA%3D%3D) into an R notebook, check you have the necessary packages installed and then run it to see how the code produces the interactive charts. In R studio, you can change some of the plot TRUE or FALSE options and re-run to see what changes. For example, what does changing ```colorByPoint=T``` to ```colorByPoint=F``` do???
+
+## Resources
+
+ * For good examples with R code check out the [package website](http://jkunst.com/highcharter/)  
+ 
+ * For a good overview of highcharter functions (that might be out of date but still useful) check out the  [function references](http://jkunst.com/highcharter/docs/reference/index.html)  
+ 
+ * This site lists the code for options to be used with Highcharts, not Highcharter, *but* the options listed here also appear in Highcharter. You can use this as a reference, though you might have to use a different syntax in some cases [options references](https://api.highcharts.com/highcharts/)  
+ 
+ * Some good chart examples here in the blog post [Thinking in Highcharter](https://dantonnoriega.github.io/ultinomics.org/post/2017-04-05-highcharter-explainer.html) 
+ 
+ * Highcharter Documentation on [CRAN (PDF)](https://cran.r-project.org/web/packages/highcharter/highcharter.pdf)  
+ 
+ 
+
+## Bar Chart
+
+This section will explain detail of the code, but most of the following sections will skip on the explanation as most charts are structured the same, except for the ```type``` argument.  
+
+The code below produces a bar chart (or **column** in highcharter-speak. In highcharter ```type = "bar"``` will produce a horizontal bar chart) of CY17 surgical case volume at main and each ambulatory surgery center. 
+
+The ```hchart()``` functions is analogous to the ```ggplot()``` function, almost all of your highcharter plots will start with it. First you specify your dataframe.  
+
+ * ```type``` is where you say what kind of chart you want    
+ * ```hcaes()``` is just like ggplot's ```aes```, in it you specify the x and y data. then you can include some chart option    
+ * ```name``` is what you want to appear in the hover tool-tip    
+ * ```colorByPoint``` will make each bar a different color    
+ * ```showInLegend``` lets you include/exclude stuff from the legend. In this example no legend is needed    
+ * ```dataLabels``` lets you include/exclude data labels at the end of the bars  
+ 
+Like ggplot() you can add formatting layers to your plot, but you use the dplyr pipe: %>%  
+
+ * ```hc_chart(zoomType = "xy") ``` lets you control how the chart zooms in when the user clicks and drags. Option are "x", "y" or "xy"  
+ * ```hc_tooltip``` is where you specify options for the hover tooltip. the shared options is mainly for line charts with multiple lines. if you want the tooltip to show data for all lines at once then set ```shared = T```, but if you only want data for the line you are hovering on, then ```shared = F```  
+ * ```hc_credits``` lets you put a source on the bottom right hand side of the chart  
+ * ```hc_add_theme``` lets you apply themes. There are of a lot to choose from  
+ * ```hc_legend``` turn the legend on/off  
+ * ```hc_exporting``` allows users to print the plot, or export the plot image *and* the data used to make the plot. It inserts a drop down menu in the upper right hand corner  
+ 
+
+```{r, echo = T, warning = F}
+
+#cases by location
+loc <- cases %>%
+  dplyr::group_by(location) %>%
+  dplyr::summarise(count = n())
+
+#bar chart for case volume by location
+hchart(loc, type = "column", hcaes(x=location, y=count), name = "CY17 Case Volume", colorByPoint=T, showInLegend = F, dataLabels = list(enabled=T)) %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_tooltip(crosshairs = TRUE, shared = FALSE, borderWidth = 1) %>%
+  hc_credits(enabled = TRUE,
+             text = "Data Source: CDW") %>%
+  #hc_add_theme(hc_theme_gridlight()) %>%
+  hc_add_theme(hc_theme_elementary()) %>%
+  #hc_add_theme(hc_theme_flat()) %>%
+  #hc_add_theme(hc_theme_darkunica()) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_exporting(enabled = TRUE,
+           filename = "plot_data") %>%
+  hc_title(text = "CY17 Case Volume by Location", 
+           align = "left") %>%
+  hc_yAxis(title = list(text = "Number of Cases")) %>%
+  hc_xAxis(title = " ")
+
+```
+
+
+## Line Chart
+
+Here is  a line chart for total daily case volume. Note the addition of ```group``` in hcaes(), which tells highcharter to use a different color for each location. Also when you hover anywhere in the chart, the hover tooltip will show data for all locations. If you only want it to show data for the line you're hovering on, change ```shared = TRUE``` in the ```hc_tooltip``` options.
+
+**PRO-TIP: Check out what happens when you click on one of the locations in the legend**
+
+```{r, echo = T, warning = F}
+
+#cases by location
+monthly <- cases %>%
+  dplyr::group_by(month, location) %>%
+  dplyr::summarise(count = n())
+
+#line chart for case volume by location
+hchart(monthly, type = "line", hcaes(x=month, y=count, group = location), showInLegend = T) %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_tooltip(crosshairs = TRUE, shared = TRUE, borderWidth = 1) %>%
+  hc_credits(enabled = TRUE,
+             text = "Data Source: CDW") %>%
+  #hc_add_theme(hc_theme_gridlight()) %>%
+  #hc_add_theme(hc_theme_elementary()) %>%
+  hc_add_theme(hc_theme_flat()) %>%
+  #hc_add_theme(hc_theme_darkunica()) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_exporting(enabled = TRUE,
+           filename = "plot_data") %>%
+  hc_title(text = "Monthly Case Volume by Location", 
+           align = "left") %>%
+  hc_yAxis(title = list(text = "Number of Cases")) %>%
+  hc_xAxis(title = " ")
+
+```
+
+
+## Scatterplot
+
+Scatterplots also need the ```group``` argument to have the colors show correctly. Also notice the ```hc_tooltip```, its customized to show the date and count. Without this, there would still be a hover tooltip, but the formatting would be weird. For some reason highcharter doesn't format dates nicely in the tooltip, so you need to explicitly tell it to use the date column. Another thing about the tooltip formatting here is that you can't have a period in your variable name if you want to use this type of tooltip formatting (hence the ```mutate()``` line in the dplyr code to change surgery.date to surgery_date).
+
+```{r, echo = T, warning = F}
+#cases by location
+daily <- cases %>%
+  dplyr::mutate(surgery_date = surgery.date) %>%
+  dplyr::group_by(surgery_date, location) %>%
+  dplyr::summarise(count = n())
+
+#scatterplot for case volume by location
+hchart(daily, type = "scatter", hcaes(x=surgery_date, y=count, group = location, size = count), showInLegend = T) %>%
+  hc_tooltip(pointFormat = "{point.surgery_date}: <b>{point.count}</b>", 
+             headerFormat = NULL, crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_credits(enabled = TRUE,
+             text = "Data Source: CDW") %>%
+  #hc_add_theme(hc_theme_gridlight()) %>%
+  #hc_add_theme(hc_theme_elementary()) %>%
+  #hc_add_theme(hc_theme_flat()) %>%
+  hc_add_theme(hc_theme_flatdark()) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_exporting(enabled = TRUE,
+           filename = "plot_data") %>%
+  hc_title(text = "Daily Case Volume by Location", 
+           align = "left") %>%
+  hc_yAxis(title = list(text = "Number of Cases")) %>%
+  hc_xAxis(title = " ")
+
+```
+  
+-----------  
+  
+If you want to show a daily scatterplot with nicely formatted x-axis, use ```hc_xAxis(title = "", type = "datetime", dateTimeLabelFormats = list(day = '%b-%d')) ```  
+
+```{r, echo = T, warning = F}
+
+#cases by location
+daily_aug <- cases %>%
+  dplyr::filter(month == "Aug") %>%
+  dplyr::mutate(surgery_date = surgery.date) %>%
+  dplyr::group_by(surgery_date, location) %>%
+  dplyr::summarise(count = n())
+
+#scatterplot for case volume by location
+hchart(daily_aug, type = "scatter", hcaes(x=surgery_date, y=count, group = location, size = count), showInLegend = T) %>%
+  hc_tooltip(pointFormat = "{point.surgery_date}: <b>{point.count}</b>", 
+             headerFormat = NULL, crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_credits(enabled = TRUE,
+             text = "Data Source: CDW") %>%
+  #hc_add_theme(hc_theme_gridlight()) %>%
+  #hc_add_theme(hc_theme_elementary()) %>%
+  #hc_add_theme(hc_theme_flat()) %>%
+  hc_add_theme(hc_theme_darkunica()) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_exporting(enabled = TRUE,
+           filename = "plot_data") %>%
+  hc_title(text = "August Daily Case Volume by Location", 
+           align = "left") %>%
+  hc_yAxis(title = list(text = "Number of Cases")) %>%
+  hc_xAxis(title = "", type = "datetime", dateTimeLabelFormats = list(day = '%b-%d'))
+
+```
+
+
+## Heatmap
+
+Heatmaps are cool! Here is one to show total monthly cases at each ASC for CY17. I'm using the ```viridis``` package to get a cool color scheme
+
+```{r, echo=T, warning = F}
+
+monthly_heat <- cases %>%
+  dplyr::filter(location != "PERIOP COMPLEX") %>%
+  dplyr::group_by(location, month) %>%
+  dplyr::summarise(count = n()) %>%
+  droplevels()
+
+cols <- viridis::plasma(n = 100, alpha = 1, begin = 1, end = 0.4)
+
+# heatmap
+hchart(monthly_heat, name = "Total Monthly Cases", type = "heatmap", hcaes(x=month, y=location, value = count)) %>%
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_xAxis(title = "" )%>%
+  hc_yAxis(title = "") %>%
+  hc_title(text = "Monthly Case Volume by Location", 
+           align = "left") %>%
+  hc_subtitle(text = "ASCs Only", 
+           align = "left") %>%
+  hc_colorAxis(minColor = cols[1], maxColor = cols[100]) %>%
+  hc_legend(enabled = F, align = "right", verticalAlign = "top", layout = "vertical") %>% 
+  hc_tooltip(pointFormat = "{point.location} {point.month}: <b>{point.count}</b>", 
+             headerFormat = NULL, crosshairs = TRUE, shared = TRUE, borderWidth = 1, shared=T) %>%
+  hc_chart(zoomType = "xy") %>%
+  hc_credits(enabled = TRUE,
+             text = "Data Source: CDW") %>%
+  hc_legend(enabled = F) %>%
+  hc_exporting(enabled = TRUE,
+           filename = "plot_data")
+
+```
+
+
+## Timeseries
+
+One of the coolest plots in highcharter is a timeseries plot. It's a little bit more involved to set up than a standard line chart, but can be worth it due to the amount of user-interactivity. 
+
+There are loads of options here: you can select a pre-defined date range at the top left, specify the date range at top right, or use the slider at the bottom.
+
+```{r, echo=T, warning = F}
+
+weekly <- cases %>% 
+  dplyr::mutate(week_of = floor_date(surgery.date, unit = 'weeks')) %>%
+  dplyr::group_by(week_of, location) %>% 
+  dplyr::summarise(count = n())  %>%
+  tidyr::spread(location,count) %>% #moves "location" into columns instead of rows, so they can be referenced as variables later
+  rename("main"="PERIOP COMPLEX",
+         "bucks"="BUCKS DAY SURGERY",
+         "bwv"="BRANDYWINE VALLEY DAY SURGERY",
+         "kop"="KING OF PRUSSIA DAY SURGERY",
+         "voorhees"="VOORHEES DAY SURGERY")
+
+table(cases$location)
+#timeseries plot
+highchart(type = "stock") %>% 
+  hc_add_series(weekly, type = "line", id = "Main", name = "Main", hcaes(x=as.Date(week_of), y=main)) %>% 
+  hc_add_series(weekly, type = "line", id = "line", name = "Voorhees", hcaes(x=as.Date(week_of), y=voorhees))%>% 
+  hc_add_series(weekly, type = "line", id = "BWV", name = "Brandywine Valley", hcaes(x=as.Date(week_of), y=bwv)) %>%
+  hc_add_series(weekly, type = "line", id = "KOP", name = "King of Prussia", hcaes(x=as.Date(week_of), y=kop))%>% 
+  hc_add_series(weekly, type="line", id = "BUCKS", name = "Bucks", hcaes(x=as.Date(week_of), y=bucks)) %>%
+  hc_add_theme(hc_theme_flat()) %>%
+  hc_legend(enabled = T)  %>%
+  hc_rangeSelector(inputEnabled = T) %>%
+  hc_navigator(enabled = T) %>%
+  hc_scrollbar(enabled = T)%>%
+  hc_chart(zoomType = "xy") %>%
+  hc_xAxis(type = 'datetime', labels = list(format = '{value:%b.%d.%y}'))
+```
