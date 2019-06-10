@@ -32,7 +32,7 @@ This folder contains documentation related to CHOP Analytics R Standards that al
 
 The materials contained in this repository were developed and are maintained by members of the R Adoption team within the OCQI at the Children's Hospital of Philadelphia. Below is the problem statement, mission statement, and goal that this team had in mind when developing these materials as well as a list of people who directly contributed to this work. 
 
-## Problem Statment
+## Problem Statement
 
 Despite its many advantages, R is not a widely used tool within OCQI due to lack of analysts' understanding of practical value of R, OCQI R standards, R templates, and comprehensive training to adopt the tool. 
 
