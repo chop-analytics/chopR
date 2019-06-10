@@ -52,9 +52,9 @@ This group aimed to address four primary goals with these materials:
 
 ### Co-leads
 
-Emily Schriver ; schrivere@email.chop.edu
-
 Matt Dye ; dyem1@email.chop.edu
+
+Emily Schriver ; schrivere@email.chop.edu
 
 ### Team Members
 
